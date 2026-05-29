@@ -1,16 +1,14 @@
-import 'package:dreamers_movies_app_bv/presentation/screens/movies/home_screen.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dreamers_movies_app_bv/presentation/screens/movies/home_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: "/",
 
   routes: [
     GoRoute(
-      path: ".",
+      path: "/",
 
       name: HomeScreen.name,
-      builder: (context, state) => const HomeScreen(),)
-      
-      
+      builder: (context, state) => const HomeScreen(),)  
   ]
 );
