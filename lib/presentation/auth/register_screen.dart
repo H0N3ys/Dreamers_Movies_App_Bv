@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-class LoginScreen extends StatelessWidget {
-  static const name = 'login-screen';
+class RegisterScreen extends StatelessWidget {
+  static const name = 'register-screen';
 
-  const LoginScreen({super.key});
+  const RegisterScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -17,18 +17,19 @@ class LoginScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Icono
+
+
                   const Icon(
-                    Icons.movie_creation_rounded,
+                    Icons.person_add_alt_1_rounded,
                     size: 100,
                     color: Colors.blueAccent,
                   ),
 
                   const SizedBox(height: 20),
 
-                  // Título
+                 
                   const Text(
-                    'Bienvenido a Cinexa',
+                    'Crear Cuenta',
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
@@ -37,7 +38,20 @@ class LoginScreen extends StatelessWidget {
 
                   const SizedBox(height: 40),
 
-                  // Campo de correo
+                  // Nombre
+                  TextFormField(
+                    decoration: InputDecoration(
+                      labelText: 'Nombre completo',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      prefixIcon: const Icon(Icons.person_outline),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  
                   TextFormField(
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
@@ -51,7 +65,7 @@ class LoginScreen extends StatelessWidget {
 
                   const SizedBox(height: 20),
 
-                  // Contraseña
+                
                   TextFormField(
                     obscureText: true,
                     decoration: InputDecoration(
@@ -63,23 +77,31 @@ class LoginScreen extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 20),
 
-                  // Botón login
-                  ElevatedButton(
-                    onPressed: () {},
-                    child: const Text('Iniciar sesión'),
+                 
+                  TextFormField(
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: 'Confirmar contraseña',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      prefixIcon: const Icon(Icons.lock_reset_outlined),
+                    ),
                   ),
 
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 30),
 
-                  // Registro
+                
+                 
+                 
                   TextButton(
                     onPressed: () {
-                      context.push('/register');
+                      context.push('/login');
                     },
                     child: const Text(
-                      '¿No tienes cuenta? Regístrate aquí',
+                      '¿Ya tienes cuenta? Inicia sesión',
                     ),
                   ),
                 ],
