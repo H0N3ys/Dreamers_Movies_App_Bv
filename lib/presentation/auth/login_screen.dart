@@ -17,51 +17,71 @@ class LoginScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                 
-                  const Icon(Icons.movie_creation_rounded, size: 100, color: Colors.blueAccent),
-                  const SizedBox(height: 20),
-                  
-                  
-                  const Text(
-                    'Bienvenido a Cinexa', 
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)
+                  // Icono
+                  const Icon(
+                    Icons.movie_creation_rounded,
+                    size: 100,
+                    color: Colors.blueAccent,
                   ),
+
+                  const SizedBox(height: 20),
+
+                  // Título
+                  const Text(
+                    'Bienvenido a Cinexa',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
                   const SizedBox(height: 40),
 
-                  
+                  // Campo de correo
                   TextFormField(
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
                       labelText: 'Correo electrónico',
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12)
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       prefixIcon: const Icon(Icons.email_outlined),
                     ),
                   ),
+
                   const SizedBox(height: 20),
 
-                  
+                  // Contraseña
                   TextFormField(
-                    obscureText: true, 
+                    obscureText: true,
                     decoration: InputDecoration(
                       labelText: 'Contraseña',
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12)
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       prefixIcon: const Icon(Icons.lock_outline),
                     ),
                   ),
+
                   const SizedBox(height: 30),
+
+                  // Botón login
+                  ElevatedButton(
+                    onPressed: () {},
+                    child: const Text('Iniciar sesión'),
+                  ),
+
                   const SizedBox(height: 10),
 
-                  
+                  // Registro
                   TextButton(
                     onPressed: () {
-                        context.push('/register');
+                      context.push('/register');
                     },
-                    child: const Text('¿No tienes cuenta? Regístrate aquí'),
-                    )
+                    child: const Text(
+                      '¿No tienes cuenta? Regístrate aquí',
+                    ),
+                  ),
                 ],
               ),
             ),
