@@ -9,7 +9,7 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
+
   @override
   Widget build(BuildContext context) {
     //,router hace que cambie su forma de navegacion a una mas moderna en un manejo automatico de rutas 
@@ -17,6 +17,7 @@ class MyApp extends StatelessWidget {
       routerConfig: appRouter, //Sistema de rutas que utilizamos
       debugShowCheckedModeBanner: false,
       theme: AppTheme().getTheme(),
+
     );
   }
 }
