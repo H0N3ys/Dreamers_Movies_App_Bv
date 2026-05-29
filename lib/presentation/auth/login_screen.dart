@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class LoginScreen extends StatelessWidget {
   static const name = 'login-screen';
@@ -16,18 +17,18 @@ class LoginScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Icono
+                 
                   const Icon(Icons.movie_creation_rounded, size: 100, color: Colors.blueAccent),
                   const SizedBox(height: 20),
                   
-                  // Título
+                  
                   const Text(
                     'Bienvenido a Cinexa', 
                     style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)
                   ),
                   const SizedBox(height: 40),
 
-                  // Campo de Correo
+                  
                   TextFormField(
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
@@ -40,9 +41,9 @@ class LoginScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  //Contraseña
+                  
                   TextFormField(
-                    obscureText: true, // Oculta los caracteres
+                    obscureText: true, 
                     decoration: InputDecoration(
                       labelText: 'Contraseña',
                       border: OutlineInputBorder(
@@ -54,13 +55,13 @@ class LoginScreen extends StatelessWidget {
                   const SizedBox(height: 30),
                   const SizedBox(height: 10),
 
-                  // Botón de texto para registro
+                  
                   TextButton(
                     onPressed: () {
-                      
+                        context.push('/register');
                     },
                     child: const Text('¿No tienes cuenta? Regístrate aquí'),
-                  )
+                    )
                 ],
               ),
             ),
