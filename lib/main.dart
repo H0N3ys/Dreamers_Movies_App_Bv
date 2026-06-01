@@ -12,9 +12,8 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    //,router hace que cambie su forma de navegacion a una mas moderna en un manejo automatico de rutas 
     return MaterialApp.router(
-      routerConfig: appRouter, //Sistema de rutas que utilizamos
+      routerConfig: appRouter, 
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       
