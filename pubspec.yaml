@@ -72,6 +72,13 @@ flutter:
   #   - images/a_dot_ham.jpeg
 
   fonts:
+     
+    - family: Monsserrat
+      fonts:
+        - asset: assets/fonts/Montserrat-Regular.ttf
+        - asset: assets/fonts/Montserrat-Bold.ttf
+          weight: 700
+
     - family: Output
       fonts:
         - asset: assets/fonts/Output-Regular.ttf
