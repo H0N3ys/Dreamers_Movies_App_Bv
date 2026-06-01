@@ -103,3 +103,15 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+  fonts:
+    - family: Output
+      fonts:
+        - asset: assets/fonts/Output-Regular.ttf
+        - asset: assets/fonts/Output-Bold.ttf
+          weight: 700
+    - family: WorkSans
+      fonts:
+        - asset: assets/fonts/WorkSans-Regular.ttf
+        - asset: assets/fonts/WorkSans-Medium.ttf
+          weight: 500
