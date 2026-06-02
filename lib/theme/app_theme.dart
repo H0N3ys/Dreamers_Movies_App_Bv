@@ -5,7 +5,7 @@ class AppTheme {
   static const Color secondaryColor = Color(0xFF152A72); 
   static const Color accentColor = Color(0xFF020202); 
 
-  // 2. Nombres de las nuevas tipografías
+
   static const String _primaryFont = 'Output';
   static const String _secondaryFont = 'WorkSans';
 
