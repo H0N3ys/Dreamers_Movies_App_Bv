@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:dreamers_movies_app_bv/theme/app_theme.dart';
+import 'package:dreamers_movies_app_bv/theme/app_colors.dart';
 
 class CustomFilledButton extends StatelessWidget {
   final String text;
@@ -14,8 +14,8 @@ class CustomFilledButton extends StatelessWidget {
       height: 56,
       child: FilledButton(
         style: FilledButton.styleFrom(
-          backgroundColor: AppTheme.accentColor,
-          foregroundColor: Colors.white,
+          backgroundColor: AppColors.accentColor,
+          foregroundColor: AppColors.primaryColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(30),
           ),
@@ -24,7 +24,6 @@ class CustomFilledButton extends StatelessWidget {
         child: Text(
           text,
           style: const TextStyle(
-            fontFamily: 'Montserrat',
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
