@@ -46,11 +46,12 @@ class LoginScreen extends StatelessWidget {
                       ],
                     ),
                   ),
+
                   const SizedBox(height: 50),
                   const Text(
-                    'Inicia Sesión',
+                    'Mas que películas, experiencias.',
                     style: TextStyle(
-                      fontFamily: 'Montserrat',
+                      fontFamily: 'Monstserrat',
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.accentColor,
@@ -70,11 +71,12 @@ class LoginScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 40),
                   CustomFilledButton(
-                    text: 'Comenzar',
+                    text: 'Iniciar Sesión',
                     onPressed: () {
                       context.pushNamed(RegisterScreen.name);
                     },
                   ),
+
                   const SizedBox(height: 24),
                   TextButton(
                     onPressed: () {

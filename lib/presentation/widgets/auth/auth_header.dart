@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:dreamers_movies_app_bv/theme/app_theme.dart'; // Cambia la importación
+import 'package:dreamers_movies_app_bv/theme/app_theme.dart';
 
 class AuthHeader extends StatelessWidget {
   final String title;
   final IconData icon;
 
   const AuthHeader({
-    super.key, 
+    super.key,
     required this.title,
     this.icon = Icons.movie_creation_rounded,
   });
@@ -15,14 +15,10 @@ class AuthHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Icon(
-          icon,
-          size: 100, 
-          color: AppTheme.primaryColor, // Usa AppTheme.primaryColor
-        ),
+        Icon(icon, size: 100, color: AppTheme.primaryColor),
         const SizedBox(height: 20),
         Text(
-          title, 
+          title,
           style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
         ),
       ],

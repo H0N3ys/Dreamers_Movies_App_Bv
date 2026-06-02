@@ -21,22 +21,23 @@ class RegisterScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  
-                  // 1. Encabezado (Le pasamos el ícono específico de Registro)
+                  Image.asset(
+                    'assets/images/logoBueno.png',
+                    height: 150,
+                    fit: BoxFit.contain,
+                  ),
                   const AuthHeader(
                     title: 'Crear Cuenta',
                     icon: Icons.person_add_alt_1_rounded,
                   ),
                   const SizedBox(height: 40),
 
-                  // 2. Campo: Nombre
                   const CustomTextField(
                     label: 'Nombre completo',
                     icon: Icons.person_outline,
                   ),
                   const SizedBox(height: 20),
 
-                  // 3. Campo: Correo
                   const CustomTextField(
                     label: 'Correo electrónico',
                     icon: Icons.email_outlined,
@@ -44,7 +45,6 @@ class RegisterScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // 4. Campo: Contraseña
                   const CustomTextField(
                     label: 'Contraseña',
                     icon: Icons.lock_outline,
@@ -52,7 +52,6 @@ class RegisterScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // 5. Campo: Confirmar Contraseña
                   const CustomTextField(
                     label: 'Confirmar contraseña',
                     icon: Icons.lock_reset_outlined,
@@ -60,14 +59,12 @@ class RegisterScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 30),
 
-                  // 6. Botón de texto para ir al Login
                   TextButton(
                     onPressed: () {
                       context.push('/login');
                     },
                     child: const Text('¿Ya tienes cuenta? Inicia sesión'),
                   ),
-                  
                 ],
               ),
             ),
