@@ -1,6 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:dreamers_movies_app_bv/config/router/app_router.dart';
 import 'package:dreamers_movies_app_bv/theme/app_theme.dart';
-import 'package:flutter/material.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,8 +15,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp.router(
       routerConfig: appRouter, 
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      
+      theme: AppTheme().getTheme(),
     );
   }
 }
