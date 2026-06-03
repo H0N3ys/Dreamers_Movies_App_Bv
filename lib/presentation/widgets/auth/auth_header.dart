@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:dreamers_movies_app_bv/theme/app_theme.dart';
+import 'package:dreamers_movies_app_bv/theme/app_colors.dart';
 
 class AuthHeader extends StatelessWidget {
   final String title;
@@ -13,13 +13,15 @@ class AuthHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Column(
       children: [
-        Icon(icon, size: 100, color: AppTheme.primaryColor),
+        Icon(icon, size: 100, color: AppColors.accentColor),
         const SizedBox(height: 20),
         Text(
           title,
-          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+          style: textTheme.titleLarge,
         ),
       ],
     );

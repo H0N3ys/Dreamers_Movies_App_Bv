@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dreamers_movies_app_bv/theme/app_theme.dart';
+import 'package:dreamers_movies_app_bv/theme/app_colors.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/auth/register_screen.dart';
-import 'package:dreamers_movies_app_bv/presentation/widgets/auth/auth_header.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/custom_text_field.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/custom_filled_button.dart';
 
@@ -13,6 +12,8 @@ class LoginScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -28,33 +29,27 @@ class LoginScreen extends StatelessWidget {
                     fit: BoxFit.contain,
                   ),
                   RichText(
-                    text: const TextSpan(
-                      style: TextStyle(
-                        fontFamily: 'Montserrat',
-                        fontSize: 35,
-                        fontWeight: FontWeight.w900,
-                      ),
-                      children: [
+                    text: TextSpan(
+                      style: textTheme.displayLarge?.copyWith(fontSize: 35),
+                      children: const [
                         TextSpan(
                           text: 'Ci',
-                          style: TextStyle(color: AppTheme.accentColor),
+                          style: TextStyle(color: AppColors.accentColor),
                         ),
                         TextSpan(
                           text: 'nexa',
-                          style: TextStyle(color: AppTheme.secondaryColor),
+                          style: TextStyle(color: AppColors.secondaryColor),
                         ),
                       ],
                     ),
                   ),
 
                   const SizedBox(height: 50),
-                  const Text(
+                  Text(
                     'Mas que películas, experiencias.',
-                    style: TextStyle(
-                      fontFamily: 'Monstserrat',
+                    style: textTheme.bodyLarge?.copyWith(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.accentColor,
                     ),
                   ),
                   const SizedBox(height: 40),
@@ -69,6 +64,22 @@ class LoginScreen extends StatelessWidget {
                     icon: Icons.lock_outline,
                     obscureText: true,
                   ),
+                  const SizedBox(height: 10),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () {
+                        context.pushNamed(RegisterScreen.name);
+                      },
+                      child: Text(
+                        '¿Olvidaste tu contraseña?',
+                        style: textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.secondaryColor,
+                        ),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 40),
                   CustomFilledButton(
                     text: 'Iniciar Sesión',
@@ -82,12 +93,11 @@ class LoginScreen extends StatelessWidget {
                     onPressed: () {
                       context.pushNamed(RegisterScreen.name);
                     },
-                    child: const Text(
+                    child: Text(
                       '¿No tienes cuenta? Regístrate aquí',
-                      style: TextStyle(
-                        fontFamily: 'Montserrat',
+                      style: textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.secondaryColor,
+                        color: AppColors.secondaryColor,
                       ),
                     ),
                   ),
