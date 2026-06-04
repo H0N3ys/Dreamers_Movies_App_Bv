@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 class HomeScreen extends StatelessWidget {
   static const name =
-      'home-screen'; //nombre ala cual podremos llegar a este componente
-  //nombre ala cual podremos llegar a este componente
+      'home-screen';
+
   const HomeScreen({super.key});
 
   @override
