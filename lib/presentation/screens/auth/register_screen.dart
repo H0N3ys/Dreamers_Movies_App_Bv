@@ -19,20 +19,18 @@ class RegisterScreen extends StatelessWidget {
         child: Center(
           child: SingleChildScrollView(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 30),
+              padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Image.asset(
                     'assets/images/logoBueno.png',
-                    height: 150,
+                    height: 152,
                     fit: BoxFit.contain,
                   ),
                   RichText(
                     text: TextSpan(
-                      style: textTheme.displayLarge?.copyWith(
-                        fontSize: 35,
-                      ),
+                      style: textTheme.displayLarge?.copyWith(fontSize: 36),
                       children: const [
                         TextSpan(
                           text: 'Ci',
@@ -45,62 +43,50 @@ class RegisterScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 30),
-                  
-                  Text(
-                    'Crear cuenta',
-                    style: textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 32),
+
+                  Text('Crear cuenta', style: textTheme.titleLarge),
+                  const SizedBox(height: 28),
 
                   const CustomTextField(
                     label: 'Ingresar Nombres',
+                    hintText: 'Carlos Adrian',
                     icon: Icons.person_outline,
                     keyboardType: TextInputType.name,
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
                   const CustomTextField(
                     label: 'Ingresar Apellidos',
+                    hintText: 'Zamorano Rodriguez',
                     icon: Icons.person_outline,
                     keyboardType: TextInputType.name,
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
                   const CustomTextField(
                     label: 'Correo Electronico',
+                    hintText: 'ejemplo@correo.com',
                     icon: Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
                   const CustomTextField(
                     label: 'Ingresar Numero',
+                    hintText: '998 000 0000',
                     icon: Icons.phone_iphone_outlined,
                     keyboardType: TextInputType.phone,
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
                   const CustomTextField(
                     label: 'Contraseña',
+                    hintText: 'Ingresa tu contraseña',
                     icon: Icons.lock_outline,
                     obscureText: true,
                   ),
-                  const SizedBox(height: 30),
-
-                  TextButton(
-                    onPressed: () {
-                      context.pushNamed(LoginScreen.name);
-                    },
-                    child: Text(
-                      'Iniciar sesion',
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: AppColors.secondaryColor,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
                   CustomFilledButton(
                     text: 'Crear Cuenta',
@@ -108,7 +94,22 @@ class RegisterScreen extends StatelessWidget {
                       context.pushNamed(LoginScreen.name);
                     },
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 24),
+
+                  TextButton(
+                    onPressed: () {
+                      context.pushNamed(LoginScreen.name);
+                    },
+                    child: Text(
+                      'Si ya tienes cuenta, inicia sesión aquí',
+                      style: textTheme.bodyMedium?.copyWith(
+                        fontFamily: 'Montserrat',
+                        color: AppColors.secondaryColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),

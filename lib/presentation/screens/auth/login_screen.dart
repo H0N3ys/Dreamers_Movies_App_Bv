@@ -25,14 +25,14 @@ class LoginScreen extends StatelessWidget {
                 children: [
                   Image.asset(
                     'assets/images/logoBueno.png',
-                    height: 150,
+                    height: 152,
                     fit: BoxFit.contain,
                   ),
                   RichText(
                     text: const TextSpan(
                       style: TextStyle(
                         fontFamily: 'Montserrat',
-                        fontSize: 35,
+                        fontSize: 36,
                         fontWeight: FontWeight.w900,
                       ),
                       children: [
@@ -48,34 +48,37 @@ class LoginScreen extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(height: 50),
+                  const SizedBox(height: 48),
                   Text(
                     'Mas que películas, experiencias.',
                     style: TextStyle(
                       fontFamily: 'Monstserrat',
-                      fontSize: 20,
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 40),
                   const CustomTextField(
                     label: 'Correo electrónico',
+                    hintText: 'ejemplo@correo.com',
                     icon: Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
                   const CustomTextField(
                     label: 'Contraseña',
+                    hintText: 'Ingresa tu contraseña',
                     icon: Icons.lock_outline,
                     obscureText: true,
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {
-                        context.pushNamed(RegisterScreen.name);
-                      },
+                      // onPressed: () {
+                      //   context.pushNamed(RegisterScreen.name);
+                      // },
+                      onPressed: null,
                       child: Text(
                         '¿Olvidaste tu contraseña?',
                         style: textTheme.bodyMedium?.copyWith(
@@ -86,14 +89,9 @@ class LoginScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 40),
-                  CustomFilledButton(
-                    text: 'Iniciar Sesión',
-                    onPressed: () {
-                      context.pushNamed(RegisterScreen.name);
-                    },
-                  ),
+                  CustomFilledButton(text: 'Iniciar Sesión', onPressed: () {}),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 32),
                   TextButton(
                     onPressed: () {
                       context.pushNamed(RegisterScreen.name);

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class CustomTextField extends StatelessWidget {
   final String label;
+
   final IconData? icon;
   final bool obscureText;
   final TextInputType keyboardType;
@@ -43,11 +44,10 @@ class CustomTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+    final obscureNotifier = ValueNotifier<bool>(obscureText);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Label personalizado
         Text(
           label,
           style: theme.textTheme.bodyMedium?.copyWith(
@@ -56,67 +56,88 @@ class CustomTextField extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        
-        
-        TextFormField(
-          controller: controller,
-          obscureText: obscureText,
-          keyboardType: keyboardType,
-          onChanged: onChanged,
-          onFieldSubmitted: onSubmitted,
-          validator: validator,
-          enabled: enabled,
-          textInputAction: textInputAction,
-          focusNode: focusNode,
-          onEditingComplete: onEditingComplete,
-          maxLines: maxLines,
-          minLines: minLines,
-          maxLength: maxLength,
-          style: theme.textTheme.bodyLarge,
-          decoration: InputDecoration(
-            hintText: hintText,
-            errorText: errorText,
-            prefixIcon: icon != null ? Icon(icon, size: 22) : null,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: theme.colorScheme.outline,
+
+        ValueListenableBuilder<bool>(
+          valueListenable: obscureNotifier,
+          builder: (context, isObscured, child) {
+            return TextFormField(
+              controller: controller,
+              obscureText: isObscured,
+              keyboardType: keyboardType,
+              onChanged: onChanged,
+              onFieldSubmitted: onSubmitted,
+              validator: validator,
+              enabled: enabled,
+              textInputAction: textInputAction,
+              focusNode: focusNode,
+              onEditingComplete: onEditingComplete,
+              maxLines: obscureText ? 1 : maxLines,
+              minLines: minLines,
+              maxLength: maxLength,
+              style: theme.textTheme.bodyLarge,
+              decoration: InputDecoration(
+                hintText: hintText,
+                errorText: errorText,
+                prefixIcon: icon != null ? Icon(icon, size: 22) : null,
+                suffixIcon: obscureText
+                    ? GestureDetector(
+                        onTap: () {
+                          obscureNotifier.value = !obscureNotifier.value;
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 12),
+                          child: Icon(
+                            isObscured
+                                ? Icons.visibility_off_rounded
+                                : Icons.visibility_rounded,
+                            size: 22,
+                            color: theme.colorScheme.onSurface.withOpacity(
+                              0.35,
+                            ),
+                          ),
+                        ),
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: theme.colorScheme.outline),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.outline.withOpacity(0.5),
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.primary,
+                    width: 2,
+                  ),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.error,
+                    width: 1.5,
+                  ),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.error,
+                    width: 2,
+                  ),
+                ),
+                filled: true,
+                fillColor: theme.colorScheme.surface,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
               ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: theme.colorScheme.outline.withOpacity(0.5),
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: theme.colorScheme.primary,
-                width: 2,
-              ),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: theme.colorScheme.error,
-                width: 1.5,
-              ),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: theme.colorScheme.error,
-                width: 2,
-              ),
-            ),
-            filled: true,
-            fillColor: theme.colorScheme.surface,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 16,
-            ),
-          ),
+            );
+          },
         ),
       ],
     );
