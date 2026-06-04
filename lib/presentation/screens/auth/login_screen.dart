@@ -30,7 +30,7 @@ class LoginScreen extends StatelessWidget {
                   RichText(
                     text: const TextSpan(
                       style: TextStyle(
-                        fontFamily: 'Montserrat',
+                        fontFamily: 'Output',
                         fontSize: 35,
                         fontWeight: FontWeight.w900,
                       ),
@@ -51,7 +51,7 @@ class LoginScreen extends StatelessWidget {
                   const Text(
                     'Mas que películas, experiencias.',
                     style: TextStyle(
-                      fontFamily: 'Monstserrat',
+                      fontFamily: 'Output',
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.accentColor,
@@ -85,7 +85,7 @@ class LoginScreen extends StatelessWidget {
                     child: const Text(
                       '¿No tienes cuenta? Regístrate aquí',
                       style: TextStyle(
-                        fontFamily: 'Montserrat',
+                        fontFamily: 'Output',
                         fontWeight: FontWeight.bold,
                         color: AppTheme.secondaryColor,
                       ),
