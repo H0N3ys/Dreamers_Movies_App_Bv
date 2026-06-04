@@ -47,7 +47,6 @@ class CustomTextField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Label personalizado
         Text(
           label,
           style: theme.textTheme.bodyMedium?.copyWith(

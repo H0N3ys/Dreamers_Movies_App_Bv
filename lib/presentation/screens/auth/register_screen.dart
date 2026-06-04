@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dreamers_movies_app_bv/theme/app_colors.dart';
+import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
+import 'package:dreamers_movies_app_bv/resources/styles/styles.dart'; 
 import 'package:dreamers_movies_app_bv/presentation/widgets/custom_text_field.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/custom_filled_button.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/auth/login_screen.dart';
@@ -28,10 +29,13 @@ class RegisterScreen extends StatelessWidget {
                     height: 150,
                     fit: BoxFit.contain,
                   ),
+                  
+                 
                   RichText(
                     text: TextSpan(
                       style: textTheme.displayLarge?.copyWith(
                         fontSize: 35,
+                        fontFamily: AppTheme.primaryFont, 
                       ),
                       children: const [
                         TextSpan(
@@ -49,7 +53,9 @@ class RegisterScreen extends StatelessWidget {
                   
                   Text(
                     'Crear cuenta',
-                    style: textTheme.titleLarge,
+                    style: textTheme.titleLarge?.copyWith(
+                      fontFamily: AppTheme.secondaryFont, 
+                    ),
                   ),
                   const SizedBox(height: 40),
 
@@ -97,6 +103,7 @@ class RegisterScreen extends StatelessWidget {
                       style: textTheme.bodyMedium?.copyWith(
                         color: AppColors.secondaryColor,
                         fontWeight: FontWeight.w500,
+                        fontFamily: AppTheme.primaryFont, 
                       ),
                     ),
                   ),
