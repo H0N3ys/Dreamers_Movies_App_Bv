@@ -99,7 +99,7 @@ class LoginScreen extends StatelessWidget {
                       context.pushNamed('blank-screen');
                     },
                   ),
-                  CustomFilledButton(text: 'Iniciar Sesión', onPressed: () {}),
+                  
 
                   const SizedBox(height: 24),
                   
