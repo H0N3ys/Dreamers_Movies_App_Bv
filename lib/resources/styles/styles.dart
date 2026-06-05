@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'app_colors.dart';
+import '../colors/colors.dart';  
 
 class AppTheme {
-  static const String _primaryFont = 'Output';
-  static const String _secondaryFont = 'WorkSans';
+  static const String primaryFont = 'Output';
+  static const String secondaryFont = 'WorkSans';
 
 <<<<<<< HEAD
 
@@ -41,7 +41,7 @@ class AppTheme {
 =======
   static ThemeData get lightTheme => ThemeData(
         useMaterial3: true,
-        fontFamily: _primaryFont,
+        fontFamily: primaryFont,
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.secondaryColor,
           brightness: Brightness.light,
@@ -57,14 +57,14 @@ class AppTheme {
             backgroundColor: AppColors.secondaryColor,
             foregroundColor: AppColors.primaryColor,
             textStyle: const TextStyle(
-              fontFamily: _primaryFont,
+              fontFamily: primaryFont,
               fontWeight: FontWeight.bold,
             ),
           ),
         ),
         textTheme: const TextTheme(
           titleLarge: TextStyle(
-            fontFamily: _secondaryFont,
+            fontFamily: secondaryFont,
             color: AppColors.accentColor,
             fontWeight: FontWeight.bold,
             fontSize: 22,
