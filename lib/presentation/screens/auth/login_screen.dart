@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dreamers_movies_app_bv/theme/app_colors.dart';
+import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
+import 'package:dreamers_movies_app_bv/resources/styles/styles.dart'; 
 import 'package:dreamers_movies_app_bv/presentation/screens/auth/register_screen.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/custom_text_field.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/custom_filled_button.dart';
@@ -28,7 +29,14 @@ class LoginScreen extends StatelessWidget {
                     height: 152,
                     fit: BoxFit.contain,
                   ),
+                  
                   RichText(
+                    text: TextSpan(
+                      style: textTheme.displayLarge?.copyWith(
+                        fontSize: 35,
+                        fontFamily: AppTheme.primaryFont, 
+                      ),
+                      children: const [
                     text: const TextSpan(
                       style: TextStyle(
                         fontFamily: 'Montserrat',
@@ -48,6 +56,8 @@ class LoginScreen extends StatelessWidget {
                     ),
                   ),
 
+                  const SizedBox(height: 50),
+                                
                   const SizedBox(height: 48),
                   Text(
                     'Mas que películas, experiencias.',
@@ -55,15 +65,19 @@ class LoginScreen extends StatelessWidget {
                       fontFamily: 'Monstserrat',
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
+                      fontFamily: AppTheme.secondaryFont, 
                     ),
                   ),
                   const SizedBox(height: 40),
+                  
                   const CustomTextField(
                     label: 'Correo electrónico',
                     hintText: 'ejemplo@correo.com',
                     icon: Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
                   ),
+                  const SizedBox(height: 20),
+                  
                   const SizedBox(height: 16),
                   const CustomTextField(
                     label: 'Contraseña',
@@ -71,6 +85,8 @@ class LoginScreen extends StatelessWidget {
                     icon: Icons.lock_outline,
                     obscureText: true,
                   ),
+                  const SizedBox(height: 10),
+                  
                   const SizedBox(height: 8),
                   Align(
                     alignment: Alignment.centerRight,
@@ -84,13 +100,23 @@ class LoginScreen extends StatelessWidget {
                         style: textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: AppColors.secondaryColor,
+                          fontFamily: AppTheme.primaryFont, 
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 40),
+                  
+                  CustomFilledButton(
+                    text: 'Iniciar Sesión',
+                    onPressed: () {
+                      context.pushNamed(RegisterScreen.name);
+                    },
+                  ),
                   CustomFilledButton(text: 'Iniciar Sesión', onPressed: () {}),
 
+                  const SizedBox(height: 24),
+                  
                   const SizedBox(height: 32),
                   TextButton(
                     onPressed: () {
@@ -102,6 +128,7 @@ class LoginScreen extends StatelessWidget {
                         fontFamily: 'Montserrat',
                         fontWeight: FontWeight.bold,
                         color: AppColors.secondaryColor,
+                        fontFamily: AppTheme.primaryFont, 
                       ),
                     ),
                   ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dreamers_movies_app_bv/theme/app_colors.dart';
+import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
+import 'package:dreamers_movies_app_bv/resources/styles/styles.dart'; 
 import 'package:dreamers_movies_app_bv/presentation/widgets/custom_text_field.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/custom_filled_button.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/auth/login_screen.dart';
@@ -28,9 +29,13 @@ class RegisterScreen extends StatelessWidget {
                     height: 152,
                     fit: BoxFit.contain,
                   ),
+                  
+                 
                   RichText(
                     text: TextSpan(
-                      style: textTheme.displayLarge?.copyWith(fontSize: 36),
+                      style: textTheme.displayLarge?.copyWith(
+                        fontSize: 35,
+                      ),
                       children: const [
                         TextSpan(
                           text: 'Ci',
@@ -43,10 +48,13 @@ class RegisterScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 32),
-
-                  Text('Crear cuenta', style: textTheme.titleLarge),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 30),
+                  
+                  Text(
+                    'Crear cuenta',
+                    style: textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 40),
 
                   const CustomTextField(
                     label: 'Ingresar Nombres',
@@ -105,7 +113,7 @@ class RegisterScreen extends StatelessWidget {
                       style: textTheme.bodyMedium?.copyWith(
                         fontFamily: 'Montserrat',
                         color: AppColors.secondaryColor,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
