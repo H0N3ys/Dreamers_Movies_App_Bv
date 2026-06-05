@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dreamers_movies_app_bv/theme/app_colors.dart';
+import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
+import 'package:dreamers_movies_app_bv/resources/styles/styles.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/custom_text_field.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/custom_filled_button.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/auth/login_screen.dart';
@@ -19,13 +20,13 @@ class RegisterScreen extends StatelessWidget {
         child: Center(
           child: SingleChildScrollView(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 30),
+              padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Image.asset(
                     'assets/images/logoBueno.png',
-                    height: 150,
+                    height: 152,
                     fit: BoxFit.contain,
                   ),
 
@@ -33,6 +34,7 @@ class RegisterScreen extends StatelessWidget {
                     text: TextSpan(
                       style: textTheme.displayLarge?.copyWith(
                         fontSize: 35,
+                        fontFamily: AppTheme.primaryFont,
                       ),
                       children: const [
                         TextSpan(
@@ -55,13 +57,16 @@ class RegisterScreen extends StatelessWidget {
 
                   Text(
                     'Crear cuenta',
-                    style: textTheme.titleLarge,
+                    style: textTheme.titleLarge?.copyWith(
+                      fontFamily: AppTheme.secondaryFont,
+                    ),
                   ),
 
                   const SizedBox(height: 40),
 
                   const CustomTextField(
                     label: 'Ingresar Nombres',
+                    hintText: 'Carlos Adrian',
                     icon: Icons.person_outline,
                     keyboardType: TextInputType.name,
                   ),
@@ -70,6 +75,7 @@ class RegisterScreen extends StatelessWidget {
 
                   const CustomTextField(
                     label: 'Ingresar Apellidos',
+                    hintText: 'Zamorano Rodriguez',
                     icon: Icons.person_outline,
                     keyboardType: TextInputType.name,
                   ),
@@ -78,6 +84,7 @@ class RegisterScreen extends StatelessWidget {
 
                   const CustomTextField(
                     label: 'Correo Electronico',
+                    hintText: 'ejemplo@correo.com',
                     icon: Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
                   ),
@@ -86,6 +93,7 @@ class RegisterScreen extends StatelessWidget {
 
                   const CustomTextField(
                     label: 'Ingresar Numero',
+                    hintText: '998 000 0000',
                     icon: Icons.phone_iphone_outlined,
                     keyboardType: TextInputType.phone,
                   ),
@@ -94,35 +102,37 @@ class RegisterScreen extends StatelessWidget {
 
                   const CustomTextField(
                     label: 'Contraseña',
+                    hintText: 'Ingresa tu contraseña',
                     icon: Icons.lock_outline,
                     obscureText: true,
                   ),
 
                   const SizedBox(height: 30),
 
+                  CustomFilledButton(
+                    text: 'Crear Cuenta',
+                    onPressed: () {
+                      context.pushNamed('blank-screen');
+                    },
+                  ),
+
+                  const SizedBox(height: 24),
+
                   TextButton(
                     onPressed: () {
                       context.pushNamed(LoginScreen.name);
                     },
                     child: Text(
-                      'Iniciar sesion',
+                      'Si ya tienes cuenta, inicia sesión aquí',
                       style: textTheme.bodyMedium?.copyWith(
+                        fontFamily: AppTheme.primaryFont,
                         color: AppColors.secondaryColor,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: 20),
-
-                  CustomFilledButton(
-                    text: 'Crear Cuenta',
-                    onPressed: () {
-                      context.pushNamed(LoginScreen.name);
-                    },
-                  ),
-
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),

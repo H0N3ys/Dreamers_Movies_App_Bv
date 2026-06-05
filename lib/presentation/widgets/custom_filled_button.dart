@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:dreamers_movies_app_bv/theme/app_colors.dart';
+import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
 
 class CustomFilledButton extends StatelessWidget {
   final String text;
