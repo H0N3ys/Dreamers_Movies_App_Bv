@@ -26,7 +26,7 @@ class LoginScreen extends StatelessWidget {
                 children: [
                   Image.asset(
                     'assets/images/logoBueno.png',
-                    height: 150,
+                    height: 152,
                     fit: BoxFit.contain,
                   ),
                   
@@ -53,8 +53,8 @@ class LoginScreen extends StatelessWidget {
                                 
                   Text(
                     'Mas que películas, experiencias.',
-                    style: textTheme.bodyLarge?.copyWith(
-                      fontSize: 20,
+                    style: TextStyle(
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
                       fontFamily: AppTheme.secondaryFont, 
                     ),
@@ -63,6 +63,7 @@ class LoginScreen extends StatelessWidget {
                   
                   const CustomTextField(
                     label: 'Correo electrónico',
+                    hintText: 'ejemplo@correo.com',
                     icon: Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
                   ),
@@ -70,6 +71,7 @@ class LoginScreen extends StatelessWidget {
                   
                   const CustomTextField(
                     label: 'Contraseña',
+                    hintText: 'Ingresa tu contraseña',
                     icon: Icons.lock_outline,
                     obscureText: true,
                   ),
@@ -78,9 +80,7 @@ class LoginScreen extends StatelessWidget {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {
-                        context.pushNamed(RegisterScreen.name);
-                      },
+                      onPressed: null, 
                       child: Text(
                         '¿Olvidaste tu contraseña?',
                         style: textTheme.bodyMedium?.copyWith(
@@ -96,7 +96,7 @@ class LoginScreen extends StatelessWidget {
                   CustomFilledButton(
                     text: 'Iniciar Sesión',
                     onPressed: () {
-                      context.pushNamed(RegisterScreen.name);
+                      context.pushNamed('blank-screen');
                     },
                   ),
 
@@ -108,7 +108,7 @@ class LoginScreen extends StatelessWidget {
                     },
                     child: Text(
                       '¿No tienes cuenta? Regístrate aquí',
-                      style: textTheme.bodyMedium?.copyWith(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: AppColors.secondaryColor,
                         fontFamily: AppTheme.primaryFont, 
