@@ -37,13 +37,6 @@ class LoginScreen extends StatelessWidget {
                         fontFamily: AppTheme.primaryFont, 
                       ),
                       children: const [
-                    text: const TextSpan(
-                      style: TextStyle(
-                        fontFamily: 'Montserrat',
-                        fontSize: 36,
-                        fontWeight: FontWeight.w900,
-                      ),
-                      children: [
                         TextSpan(
                           text: 'Ci',
                           style: TextStyle(color: AppColors.accentColor),
@@ -58,11 +51,9 @@ class LoginScreen extends StatelessWidget {
 
                   const SizedBox(height: 50),
                                 
-                  const SizedBox(height: 48),
                   Text(
                     'Mas que películas, experiencias.',
                     style: TextStyle(
-                      fontFamily: 'Monstserrat',
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       fontFamily: AppTheme.secondaryFont, 
@@ -78,7 +69,6 @@ class LoginScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   
-                  const SizedBox(height: 16),
                   const CustomTextField(
                     label: 'Contraseña',
                     hintText: 'Ingresa tu contraseña',
@@ -87,14 +77,10 @@ class LoginScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   
-                  const SizedBox(height: 8),
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      // onPressed: () {
-                      //   context.pushNamed(RegisterScreen.name);
-                      // },
-                      onPressed: null,
+                      onPressed: null, 
                       child: Text(
                         '¿Olvidaste tu contraseña?',
                         style: textTheme.bodyMedium?.copyWith(
@@ -110,14 +96,13 @@ class LoginScreen extends StatelessWidget {
                   CustomFilledButton(
                     text: 'Iniciar Sesión',
                     onPressed: () {
-                      context.pushNamed(RegisterScreen.name);
+                      context.pushNamed('blank-screen');
                     },
                   ),
                   CustomFilledButton(text: 'Iniciar Sesión', onPressed: () {}),
 
                   const SizedBox(height: 24),
                   
-                  const SizedBox(height: 32),
                   TextButton(
                     onPressed: () {
                       context.pushNamed(RegisterScreen.name);
@@ -125,7 +110,6 @@ class LoginScreen extends StatelessWidget {
                     child: Text(
                       '¿No tienes cuenta? Regístrate aquí',
                       style: TextStyle(
-                        fontFamily: 'Montserrat',
                         fontWeight: FontWeight.bold,
                         color: AppColors.secondaryColor,
                         fontFamily: AppTheme.primaryFont, 

@@ -30,7 +30,6 @@ class RegisterScreen extends StatelessWidget {
                     fit: BoxFit.contain,
                   ),
                   
-                 
                   RichText(
                     text: TextSpan(
                       style: textTheme.displayLarge?.copyWith(
@@ -48,6 +47,7 @@ class RegisterScreen extends StatelessWidget {
                       ],
                     ),
                   ),
+                  
                   const SizedBox(height: 30),
                   
                   Text(
@@ -94,12 +94,13 @@ class RegisterScreen extends StatelessWidget {
                     icon: Icons.lock_outline,
                     obscureText: true,
                   ),
-                  const SizedBox(height: 16),
+                  
+                  const SizedBox(height: 30),
 
                   CustomFilledButton(
                     text: 'Crear Cuenta',
                     onPressed: () {
-                      context.pushNamed(LoginScreen.name);
+                      context.pushNamed('blank-screen');
                     },
                   ),
                   const SizedBox(height: 24),
@@ -111,7 +112,7 @@ class RegisterScreen extends StatelessWidget {
                     child: Text(
                       'Si ya tienes cuenta, inicia sesión aquí',
                       style: textTheme.bodyMedium?.copyWith(
-                        fontFamily: 'Montserrat',
+                        fontFamily: AppTheme.primaryFont,
                         color: AppColors.secondaryColor,
                         fontWeight: FontWeight.w500,
                       ),
