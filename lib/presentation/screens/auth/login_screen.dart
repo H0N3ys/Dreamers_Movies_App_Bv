@@ -49,7 +49,7 @@ class LoginScreen extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(height: 50),
+                  const SizedBox(height: 46),
                                 
                   Text(
                     'Mas que películas, experiencias.',
