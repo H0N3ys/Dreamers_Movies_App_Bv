@@ -5,11 +5,10 @@ class AppTheme {
   static const String primaryFont = 'Output';
   static const String secondaryFont = 'WorkSans';
 
-<<<<<<< HEAD
 
 
-  static const String _primaryFont = 'Output';
-  static const String _secondaryFont = 'WorkSans';
+
+
 
   static const Color primaryColor = Color(0xFFFFFFFF); // Blanco
   static const Color secondaryColor = Color(0xFF152A72); // Azul
@@ -38,7 +37,6 @@ class AppTheme {
       ),
     ),
   );
-=======
   static ThemeData get lightTheme => ThemeData(
         useMaterial3: true,
         fontFamily: primaryFont,
@@ -75,5 +73,5 @@ class AppTheme {
           ),
         ),
       );
->>>>>>> origin/ramaadrian2
+
 }

@@ -13,11 +13,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-<<<<<<< HEAD
+
       routerConfig: appRouter, 
-=======
-      routerConfig: appRouter,
->>>>>>> origin/ramaadrian2
+
+
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
     );
