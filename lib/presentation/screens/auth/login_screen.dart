@@ -33,7 +33,7 @@ class LoginScreen extends StatelessWidget {
                   RichText(
                     text: TextSpan(
                       style: textTheme.displayLarge?.copyWith(
-                        fontSize: 35,
+                        fontSize: 36,
                         fontFamily: AppTheme.primaryFont, 
                       ),
                       children: const [
@@ -75,7 +75,7 @@ class LoginScreen extends StatelessWidget {
                     icon: Icons.lock_outline,
                     obscureText: true,
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                   
                   Align(
                     alignment: Alignment.centerRight,
