@@ -127,7 +127,7 @@ class RegisterScreen extends StatelessWidget {
                       style: textTheme.bodyMedium?.copyWith(
                         fontFamily: AppTheme.primaryFont,
                         color: AppColors.secondaryColor,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
