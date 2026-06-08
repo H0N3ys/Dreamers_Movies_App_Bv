@@ -91,7 +91,7 @@ class LoginScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 46),
                   
                   CustomFilledButton(
                     text: 'Iniciar Sesión',
