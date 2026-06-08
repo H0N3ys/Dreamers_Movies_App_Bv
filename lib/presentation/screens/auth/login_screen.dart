@@ -5,6 +5,7 @@ import 'package:dreamers_movies_app_bv/resources/styles/styles.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/auth/register_screen.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/custom_text_field.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/custom_filled_button.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatelessWidget {
   static const name = 'login-screen';
@@ -99,8 +100,18 @@ class LoginScreen extends StatelessWidget {
 
                   CustomFilledButton(
                     text: 'Iniciar Sesión',
-                    onPressed: () {
-                      context.pushNamed('blank-screen');
+                    onPressed: () async {
+                      final prefs = await SharedPreferences.getInstance();
+                      
+                      // Guardamos el token simulado
+                      await prefs.setString('auth_token', 'token_falso_12345');
+                      
+                      // 💡 TRUCO: Forzamos que la huella esté activa para engañar al Splash
+                      await prefs.setBool('huella_enabled', true); 
+
+                      if (context.mounted) {
+                        context.go('/'); // Te manda al Home la primera vez
+                      }
                     },
                   ),
 
