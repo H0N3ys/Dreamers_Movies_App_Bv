@@ -53,9 +53,7 @@ class RegisterScreen extends StatelessWidget {
                   
                   Text(
                     'Crear cuenta',
-                    style: textTheme.titleLarge?.copyWith(
-                      fontFamily: AppTheme.secondaryFont, 
-                    ),
+                    style: textTheme.titleLarge,
                   ),
                   const SizedBox(height: 40),
 
@@ -117,7 +115,7 @@ class RegisterScreen extends StatelessWidget {
                       style: textTheme.bodyMedium?.copyWith(
                         fontFamily: AppTheme.primaryFont,
                         color: AppColors.secondaryColor,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),

@@ -2,12 +2,17 @@ import 'package:go_router/go_router.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/screen.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/auth/login_screen.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/auth/register_screen.dart';
-import 'package:dreamers_movies_app_bv/presentation/screens/auth/blank_screen.dart';
+import 'package:dreamers_movies_app_bv/presentation/screens/splash_screen.dart';
 
 final appRouter = GoRouter(
-  initialLocation: "/login",
+  initialLocation: "/splash",
 
   routes: [
+    GoRoute(
+      path: '/splash',
+      name: SplashScreen.name,
+      builder: (context, state) => const SplashScreen(),
+    ),    
     GoRoute(
       path: "/login",
       name: LoginScreen.name,
@@ -25,10 +30,6 @@ final appRouter = GoRouter(
       name: HomeScreen.name,
       builder: (context, state) => const HomeScreen(),
     ),
-     GoRoute(
-      name: BlankScreen.name,
-      path: '/blank',
-      builder: (context, state) => const BlankScreen(),
-    ),
+    
   ],
 );
