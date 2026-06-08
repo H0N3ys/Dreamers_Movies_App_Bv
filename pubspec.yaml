@@ -37,6 +37,7 @@ dependencies:
   go_router: ^17.2.3
 
   cupertino_icons: ^1.0.8
+  video_player: ^2.11.1
 
   
 
@@ -65,6 +66,7 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
+    - assets/videos/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
@@ -72,7 +74,7 @@ flutter:
   #   - images/a_dot_ham.jpeg
 
   fonts:
-    
+
     - family: Output
       fonts:
         - asset: assets/fonts/Output-Regular.ttf
