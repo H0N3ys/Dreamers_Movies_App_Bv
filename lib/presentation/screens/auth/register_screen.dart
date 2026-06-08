@@ -33,7 +33,7 @@ class RegisterScreen extends StatelessWidget {
                   RichText(
                     text: TextSpan(
                       style: textTheme.displayLarge?.copyWith(
-                        fontSize: 35,
+                        fontSize: 36,
                         fontFamily: AppTheme.primaryFont,
                       ),
                       children: const [
@@ -53,7 +53,7 @@ class RegisterScreen extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 32),
 
                   Text(
                     'Crear cuenta',
@@ -107,7 +107,7 @@ class RegisterScreen extends StatelessWidget {
                     obscureText: true,
                   ),
 
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 32),
 
                   CustomFilledButton(
                     text: 'Crear Cuenta',

@@ -20,7 +20,7 @@ class LoginScreen extends StatelessWidget {
         child: Center(
           child: SingleChildScrollView(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 30),
+              padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -33,7 +33,7 @@ class LoginScreen extends StatelessWidget {
                   RichText(
                     text: TextSpan(
                       style: textTheme.displayLarge?.copyWith(
-                        fontSize: 35,
+                        fontSize: 36,
                         fontFamily: AppTheme.primaryFont,
                       ),
                       children: const [
@@ -49,12 +49,12 @@ class LoginScreen extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(height: 50),
+                  const SizedBox(height: 48),
 
                   Text(
                     'Mas que películas, experiencias.',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                       fontFamily: AppTheme.secondaryFont,
                     ),
@@ -78,7 +78,7 @@ class LoginScreen extends StatelessWidget {
                     obscureText: true,
                   ),
 
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
 
                   Align(
                     alignment: Alignment.centerRight,
