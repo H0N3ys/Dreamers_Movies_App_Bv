@@ -5,12 +5,35 @@ import 'package:dreamers_movies_app_bv/resources/styles/styles.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/auth/register_screen.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/custom_text_field.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/custom_filled_button.dart';
+import 'package:dreamers_movies_app_bv/presentation/widgets/divider_with_text.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   static const name = 'login-screen';
 
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  bool _showBiometric = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkFirstLogin();
+  }
+// Función para verificar si es el primer inicio de sesión y mostrar la opción biométrica
+  Future<void> _checkFirstLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _showBiometric = prefs.getBool('first_login_completed') ?? false;
+    });
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -102,15 +125,17 @@ class LoginScreen extends StatelessWidget {
                     text: 'Iniciar Sesión',
                     onPressed: () async {
                       final prefs = await SharedPreferences.getInstance();
-                      // Guardamos que el usuario ya entró
                       await prefs.setString('auth_token', 'token_falso_12345');
-                      await prefs.setBool('huella_enabled', true); 
+                      await prefs.setBool('first_login_completed', true);
 
                       if (context.mounted) {
-                        context.go('/'); 
+                        context.go('/');
                       }
                     },
                   ),
+                  // Mostrar la sección biométrica solo si el usuario ya ha iniciado sesión al menos una vez
+                 if (_showBiometric) ..._buildBiometricSection(context),
+
 
                   const SizedBox(height: 24),
 
@@ -135,4 +160,40 @@ class LoginScreen extends StatelessWidget {
       ),
     );
   }
+
+  List<Widget> _buildBiometricSection(BuildContext context) {
+  return [
+    const SizedBox(height: 24),
+    
+    // Un texto un poco más conversacional
+    DividerWithText(
+      text: 'o también',
+      color: AppColors.secondaryColor,
+    ),
+    
+    const SizedBox(height: 24),
+    
+    SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () {
+          context.pushNamed('local-auth-screen');
+        },
+        icon: const Icon(Icons.fingerprint_rounded), // Ícono con bordes redondeados
+        
+        // Texto humanizado y cercano
+        label: const Text('Entrar con huella o rostro'), 
+        
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.secondaryColor,
+          side: const BorderSide(color: AppColors.secondaryColor, width: 2),
+          padding: const EdgeInsets.symmetric(vertical: 14), // Un poco más alto para que sea fácil de presionar con el pulgar
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12), // Bordes más suaves y modernos
+          ),
+        ),
+      ),
+    ),
+  ];
+}
 }
