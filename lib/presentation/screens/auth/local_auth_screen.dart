@@ -27,22 +27,21 @@ class _LocalAuthScreenState extends State<LocalAuthScreen> {
 
       final bool autenticado = await auth.authenticate(
         localizedReason: 'Accede a tu cuenta de Cinexa con tu huella digital',
-        biometricOnly: true, // Antes iba dentro de "options"
-        persistAcrossBackgrounding: true, // Esto es el nuevo "stickyAuth"
+        biometricOnly: true, 
+        persistAcrossBackgrounding: true, 
       );
 
       setState(() => _estaAutenticando = false);
 
       if (autenticado && mounted) {
-        // Si la huella es correcta, va directo a la pantalla principal
-        context.goNamed('home-screen'); // Reemplaza por el nombre real de tu Home
+        context.go('/'); 
       } else {
         setState(() => _estado = 'No se pudo verificar la huella');
       }
     } catch (e) {
       setState(() {
         _estaAutenticando = false;
-        _estado = 'Error de biometría: $e';
+        _estado = 'Error de biometría. Por favor ingresa con contraseña.';
       });
     }
   }
@@ -77,18 +76,57 @@ class _LocalAuthScreenState extends State<LocalAuthScreen> {
                   style: const TextStyle(fontFamily: AppTheme.secondaryFont),
                 ),
                 const SizedBox(height: 48),
-                ElevatedButton(
-                  onPressed: _estaAutenticando ? null : _autenticar,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.secondaryColor,
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _estaAutenticando ? null : _autenticar,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.secondaryColor,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: _estaAutenticando
+                        ? const SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          )
+                        : const Text(
+                            'Ingresar con rostro o huella',
+                            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
                   ),
-                  child: _estaAutenticando
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
-                          'Ingresar con huella',
-                          style: TextStyle(color: Colors.white, fontSize: 16),
-                        ),
+                ),
+                
+                const SizedBox(height: 16),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      context.goNamed('login-screen');
+                    },
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      side: const BorderSide(color: Colors.transparent), 
+                      elevation: 2, 
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'Ingresar con contraseña',
+                      style: TextStyle(
+                        color: AppColors.secondaryColor, 
+                        fontSize: 16, 
+                        fontWeight: FontWeight.bold
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),

@@ -52,7 +52,7 @@ class LoginScreen extends StatelessWidget {
 
                   const SizedBox(height: 48),
 
-                  Text(
+                  const Text(
                     'Mas que películas, experiencias.',
                     style: TextStyle(
                       fontSize: 20,
@@ -98,20 +98,16 @@ class LoginScreen extends StatelessWidget {
 
                   const SizedBox(height: 40),
 
-
                   CustomFilledButton(
                     text: 'Iniciar Sesión',
                     onPressed: () async {
                       final prefs = await SharedPreferences.getInstance();
-                      
-                      // Guardamos el token simulado
+                      // Guardamos que el usuario ya entró
                       await prefs.setString('auth_token', 'token_falso_12345');
-                      
-                      // 💡 TRUCO: Forzamos que la huella esté activa para engañar al Splash
                       await prefs.setBool('huella_enabled', true); 
 
                       if (context.mounted) {
-                        context.go('/'); // Te manda al Home la primera vez
+                        context.go('/'); 
                       }
                     },
                   ),
@@ -127,7 +123,7 @@ class LoginScreen extends StatelessWidget {
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: AppColors.secondaryColor,
-                        fontFamily: AppTheme.primaryFont,
+                        fontFamily: AppTheme.primaryFont, 
                       ),
                     ),
                   ),
