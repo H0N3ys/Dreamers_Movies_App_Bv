@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
-import 'package:dreamers_movies_app_bv/resources/styles/styles.dart'; 
+import 'package:dreamers_movies_app_bv/resources/styles/styles.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/custom_text_field.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/custom_filled_button.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/auth/login_screen.dart';
@@ -29,34 +29,39 @@ class RegisterScreen extends StatelessWidget {
                     height: 152,
                     fit: BoxFit.contain,
                   ),
-                  
+
                   RichText(
                     text: TextSpan(
                       style: textTheme.displayLarge?.copyWith(
                         fontSize: 36,
-                        fontFamily: AppTheme.primaryFont, 
+                        fontFamily: AppTheme.primaryFont,
                       ),
                       children: const [
                         TextSpan(
                           text: 'Ci',
-                          style: TextStyle(color: AppColors.accentColor),
+                          style: TextStyle(
+                            color: AppColors.accentColor,
+                          ),
                         ),
                         TextSpan(
                           text: 'nexa',
-                          style: TextStyle(color: AppColors.secondaryColor),
+                          style: TextStyle(
+                            color: AppColors.secondaryColor,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 32),
-                  
+
                   Text(
                     'Crear cuenta',
                     style: textTheme.titleLarge?.copyWith(
-                      fontFamily: AppTheme.secondaryFont, 
+                      fontFamily: AppTheme.secondaryFont,
                     ),
                   ),
+
                   const SizedBox(height: 40),
 
                   const CustomTextField(
@@ -65,7 +70,8 @@ class RegisterScreen extends StatelessWidget {
                     icon: Icons.person_outline,
                     keyboardType: TextInputType.name,
                   ),
-                  const SizedBox(height: 16),
+
+                  const SizedBox(height: 20),
 
                   const CustomTextField(
                     label: 'Ingresar Apellidos',
@@ -73,7 +79,8 @@ class RegisterScreen extends StatelessWidget {
                     icon: Icons.person_outline,
                     keyboardType: TextInputType.name,
                   ),
-                  const SizedBox(height: 16),
+
+                  const SizedBox(height: 20),
 
                   const CustomTextField(
                     label: 'Correo Electronico',
@@ -81,7 +88,8 @@ class RegisterScreen extends StatelessWidget {
                     icon: Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
                   ),
-                  const SizedBox(height: 16),
+
+                  const SizedBox(height: 20),
 
                   const CustomTextField(
                     label: 'Ingresar Numero',
@@ -89,7 +97,8 @@ class RegisterScreen extends StatelessWidget {
                     icon: Icons.phone_iphone_outlined,
                     keyboardType: TextInputType.phone,
                   ),
-                  const SizedBox(height: 16),
+
+                  const SizedBox(height: 20),
 
                   const CustomTextField(
                     label: 'Contraseña',
@@ -97,7 +106,7 @@ class RegisterScreen extends StatelessWidget {
                     icon: Icons.lock_outline,
                     obscureText: true,
                   ),
-                  
+
                   const SizedBox(height: 32),
 
                   CustomFilledButton(
@@ -106,6 +115,7 @@ class RegisterScreen extends StatelessWidget {
                       context.pushNamed('blank-screen');
                     },
                   ),
+
                   const SizedBox(height: 24),
 
                   TextButton(
@@ -117,10 +127,11 @@ class RegisterScreen extends StatelessWidget {
                       style: textTheme.bodyMedium?.copyWith(
                         fontFamily: AppTheme.primaryFont,
                         color: AppColors.secondaryColor,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 24),
                 ],
               ),

@@ -1,13 +1,18 @@
 import 'package:go_router/go_router.dart';
-import 'package:dreamers_movies_app_bv/presentation/screens/screen.dart';
-import 'package:dreamers_movies_app_bv/presentation/screens/auth/login_screen.dart';
-import 'package:dreamers_movies_app_bv/presentation/screens/auth/register_screen.dart';
-import 'package:dreamers_movies_app_bv/presentation/screens/auth/blank_screen.dart';
+import 'package:dreamers_movies_app_bv/presentation/screens/splash_screen.dart';
+// 1. IMPORTA LA NUEVA PANTALLA (Ajusta la ruta si la guardaste en otra carpeta)
+import 'package:dreamers_movies_app_bv/presentation/screens/auth/local_auth_screen.dart';
+import 'package:dreamers_movies_app_bv/presentation/screens/home_screen.dart';
 
 final appRouter = GoRouter(
-  initialLocation: "/login",
+  initialLocation: "/splash",
 
   routes: [
+    GoRoute(
+      path: '/splash',
+      name: SplashScreen.name,
+      builder: (context, state) => const SplashScreen(),
+    ),    
     GoRoute(
       path: "/login",
       name: LoginScreen.name,
@@ -20,15 +25,18 @@ final appRouter = GoRouter(
       builder: (context, state) => const RegisterScreen(),
     ),
 
+    // 2. AGREGA LA RUTA DE LA HUELLA AQUÍ:
+    GoRoute(
+      path: "/local-auth",
+      name: LocalAuthScreen.name,
+      builder: (context, state) => const LocalAuthScreen(),
+    ),
+
     GoRoute(
       path: "/",
       name: HomeScreen.name,
       builder: (context, state) => const HomeScreen(),
     ),
-     GoRoute(
-      name: BlankScreen.name,
-      path: '/blank',
-      builder: (context, state) => const BlankScreen(),
-    ),
+    
   ],
 );
