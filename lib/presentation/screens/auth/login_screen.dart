@@ -1,16 +1,17 @@
+// lib/auth/login_screen.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
 import 'package:dreamers_movies_app_bv/resources/styles/styles.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/auth/register_screen.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/custom_text_field.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/custom_filled_button.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/divider_with_text.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   static const name = 'login-screen';
-
   const LoginScreen({super.key});
 
   @override
@@ -37,14 +38,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
     return Scaffold(
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Form(
+              key: _formKey,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -53,13 +53,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     height: 152,
                     fit: BoxFit.contain,
                   ),
-
+                  
                   RichText(
                     text: TextSpan(
-                      style: textTheme.displayLarge?.copyWith(
-                        fontSize: 36,
-                        fontFamily: AppTheme.primaryFont,
-                      ),
+                      style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                            fontSize: 36,
+                            fontFamily: AppTheme.primaryFont,
+                          ),
                       children: const [
                         TextSpan(
                           text: 'Ci',
@@ -72,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                     ),
                   ),
-
+                  
                   const SizedBox(height: 48),
 
                   const Text(
@@ -83,44 +83,65 @@ class _LoginScreenState extends State<LoginScreen> {
                       fontFamily: AppTheme.secondaryFont,
                     ),
                   ),
-
+                  
                   const SizedBox(height: 40),
-
-                  const CustomTextField(
+                  
+                  CustomTextField(
                     label: 'Correo electrónico',
                     hintText: 'ejemplo@correo.com',
                     icon: Icons.email_outlined,
+                    controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Ingresa tu correo';
+                      }
+                      if (!value.contains('@') || !value.contains('.')) {
+                        return 'Correo inválido';
+                      }
+                      return null;
+                    },
                   ),
-
+                  
                   const SizedBox(height: 20),
-
-                  const CustomTextField(
+                  
+                  CustomTextField(
                     label: 'Contraseña',
                     hintText: 'Ingresa tu contraseña',
                     icon: Icons.lock_outline,
                     obscureText: true,
+                    controller: _passwordController,
+                    keyboardType: TextInputType.visiblePassword,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => _handleLogin(),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Ingresa tu contraseña';
+                      }
+                      return null;
+                    },
                   ),
-
+                  
                   const SizedBox(height: 12),
-
+                  
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: null,
+                      onPressed: _showResetPasswordDialog,
                       child: Text(
                         '¿Olvidaste tu contraseña?',
-                        style: textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.secondaryColor,
-                          fontFamily: AppTheme.primaryFont,
-                        ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.secondaryColor,
+                              fontFamily: AppTheme.primaryFont,
+                            ),
                       ),
                     ),
                   ),
-
+                  
                   const SizedBox(height: 40),
-
+                  
                   CustomFilledButton(
                     text: 'Iniciar Sesión',
                     onPressed: () async {
@@ -138,7 +159,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
 
                   const SizedBox(height: 24),
-
+                  
                   TextButton(
                     onPressed: () {
                       context.pushNamed(RegisterScreen.name);

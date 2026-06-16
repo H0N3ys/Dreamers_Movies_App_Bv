@@ -1,8 +1,8 @@
 import 'package:go_router/go_router.dart';
-import 'package:dreamers_movies_app_bv/presentation/screens/screen.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/splash_screen.dart';
 // 1. IMPORTA LA NUEVA PANTALLA (Ajusta la ruta si la guardaste en otra carpeta)
 import 'package:dreamers_movies_app_bv/presentation/screens/auth/local_auth_screen.dart';
+import 'package:dreamers_movies_app_bv/presentation/screens/home_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: "/splash",
