@@ -7,7 +7,6 @@ import 'package:dreamers_movies_app_bv/presentation/screens/auth/login_screen.da
 import 'package:dreamers_movies_app_bv/presentation/screens/auth/register_screen.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/movies/home_screen.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/movies/search_screen.dart';
-import 'package:dreamers_movies_app_bv/presentation/screens/profile/profile_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/splash',
@@ -64,11 +63,6 @@ final appRouter = GoRouter(
       path: '/search',
       name: SearchScreen.name,
       builder: (context, state) => const SearchScreen(),
-    ),
-    GoRoute(
-      path: '/profile',
-      name: ProfileScreen.name,
-      builder: (context, state) => const ProfileScreen(),
     ),
   ],
 );

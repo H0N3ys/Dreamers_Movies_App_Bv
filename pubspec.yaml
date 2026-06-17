@@ -31,6 +31,10 @@ dependencies:
   flutter:
     sdk: flutter
   
+  supabase_flutter: ^2.12.0
+
+  flutter_dotenv: ^5.1.0
+  
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -40,6 +44,7 @@ dependencies:
   video_player: ^2.11.1
   local_auth: ^3.0.1
   shared_preferences: ^2.5.5
+  dio: ^5.9.2
 
   
 
@@ -67,8 +72,9 @@ flutter:
   # para darle permiso a la carpeta:
   assets:
     - assets/images/
-  #- assets/icons/
-  #- assets/videos/
+    #- assets/icons/
+    - assets/videos/
+    - .env
 
   # To add assets to your application, add an assets section, like this:
   # assets:

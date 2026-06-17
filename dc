@@ -1,0 +1,84 @@
+[33m8d8b50f[m[33m ([m[1;31morigin/RamaAdrian[m[33m)[m Cambios
+[33m4da3fe2[m feat: modularizacion de widgets en el home y creacion de pantalla de perfil conectada a supabase
+[33me3f56ec[m[33m ([m[1;31morigin/rama-de-charlye[m[33m)[m Conexión de UI principal con API de TMDB terminada, ya consume la api correctamente
+[33m71c6a70[m Conexión de UI principal con TMDB terminada
+[33mbc2642b[m Merge exitoso de RamaAdrian y conflicto de README resuelto
+[33m5d6fabc[m feat: login real con supabase, rutas protegidas y maquetacion del home
+[33mc9729e0[m Merge branch 'RamaSegovia' into RamaAdrian - Resolved conflicts
+[33m030cf53[m[33m ([m[1;31morigin/RamaSegovia[m[33m)[m Base de datos
+[33m8fddc8e[m Ramas mas actualizada
+[33m653902c[m Cambios en colores y .env
+[33maf0e893[m[33m ([m[1;31morigin/RamaCarlos[m[33m)[m Integrar cambios de RamaAdrian2
+[33m737c083[m Eliminar pubspec.lock conflictivo
+[33m7c5203b[m Todos los cambios
+[33m27f35d3[m feat: cambiar nombre a Cinexa y habilitar logo
+[33m3b8b062[m feat: agregar acceso biométrico al login con opción después del primer inicio de sesión
+[33mffa92f6[m style: actualiza pantallas de login, auth local y home_screen
+[33m59af087[m Merge resuelto: integrando huella de Carlos
+[33m4bbee64[m Feat: Pantalla de huella digital conectada al splash y router
+[33mf4e0813[m Conflictos en pubspec.yaml resueltos, agregadas carpetas de assets
+[33m8a1deea[m Merge final: integrando cambios de RamaAdrian y recuperando trabajo local
+[33m740054d[m Merge remote-tracking branch 'origin/RamaAdrian' into rama-de-charlye
+[33m6a92d7b[m Cambios anteriores
+[33m3dad540[m feat: se agregó splash screen con temporizador y navegación al login
+[33m63f09cc[m Merge branch 'RamaSegovia' of https://github.com/H0N3ys/Dreamers_Movies_App_Bv into RamaAdrian
+[33m8609880[m Screen.dart
+[33m4afc739[m Merge RamaSegovia into RamaCarlos
+[33m04e2c23[m Ultimo cambio
+[33m0f4a02d[m Merge remote-tracking branch 'origin/RamaSegovia' into rama-de-charlye
+[33m98fdd9d[m fix: resolviendo conflictos con los cambios de Segovia
+[33mfa3303c[m Base 4
+[33m4d28b04[m fix: resolviendo conflictos con los cambios de Segovia
+[33mbcbfdd5[m Mis cambios antes de merge
+[33mf9d2d1f[m Merge de RamaSegovia completado
+[33me574b7d[m fix: resolviendo conflictos con los cambios de Segovia
+[33m4342edb[m Merge remote-tracking branch 'origin/RamaSegovia' into rama-de-charlye
+[33m26944a6[m Cambios completos
+[33m000c9c8[m fix: resolución de conflictos al traer los cambios de Segovia
+[33md8bb671[m[33m ([m[1;31morigin/ramaadrian2[m[33m)[m UltimosCambiosXD
+[33m7d24d5c[m Merge y resolución de conflictos en fuentes
+[33m4531475[m mis cambios jj
+[33m9340756[m Fonts y Carpeta de resources
+[33m3d0bc56[m Carpeta resources
+[33m5d5df25[m Resuelto conflicto de merge: aceptados cambios de ramaadrian2
+[33m52f63d8[m Resuelto conflicto de merge: aceptados cambios de ramaadrian2
+[33m76ba78c[m Resolver conflictos con ramaadrian2
+[33mb411f21[m Cambios
+[33m8ca1d8a[m Resuelto conflicto: manteniendo cambios de ramaadrian2 en app_theme.dart
+[33m547659d[m Todos los cambios hasta ahora, actualizados
+[33md270842[m ultimos cambios
+[33m56dd012[m Sincronizacion final: colores, fuentes y diseño de login/
+[33m7d64582[m Sincronizacion final: colores, fuentes y diseño de login/registro
+[33mdeb8ad4[m Integracion final de fuentes, paleta de colores y ajustes de diseño en Login/Registro
+[33mb16c570[m Login y Registrer
+[33mb3e07f8[m Login y Registrer Conectados
+[33m6392f4f[m Widget de custom_field_field agregado
+[33m98f82cc[m Merge branch 'RamaSegovia' of https://github.com/H0N3ys/Dreamers_Movies_App_Bv into RamaAdrian
+[33m0226f0e[m Correccion typografias y colores con integracino de variables globales
+[33m5385fda[m Guardo mis cambios antes de fusionar
+[33m6b7202b[m Carpeta Assets
+[33m9f8d244[m fix: resolviendo conflictos con main
+[33m3bc987e[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Rama carlos (#4)
+[33mbfecb26[m[33m ([m[1;32m'r[m[33m)[m Resolver conflictos con main
+[33m52519fb[m Reemplazo de archivos fisicos Montserrat por Output y WorkSans
+[33md344049[m Screens hechos Login y Register bien usados
+[33m77d1c8b[m Cambios antes de traer rama-de-charlye
+[33mf63fe49[m Configuracion del tema global con colores y tipografias integradas
+[33m2de94c5[m Resolver merge y actualizar dependencias
+[33m1fbf338[m Refactor de la pantalla login usando componentes (#3)
+[33m5ec6a32[m Merge con Main
+[33m296cbbe[m Conflictos resueltos en pubspec.lock usando la version de main
+[33m1d5740c[m Mis cambios locales antes del pull
+[33m05f4cb6[m Refactor de la pantalla login usando componentes (#3)
+[33m5908708[m Refactor de la pantalla login usando componentes
+[33m56c38be[m Merge RamaCarlos dentro RamaSegovia
+[33md2867d8[m Avances RamaSegovia
+[33mbc6484e[m Rama carlos (#2)
+[33m972463b[m Merge branch 'main' into RamaCarlos
+[33m3a575a8[m Carpetas nuevas
+[33m1ed61c5[m Merge branch 'main' into rama-de-charlye
+[33md4714d8[m wip: guardando cambios antes de actualizar
+[33md171307[m Capetas y archivos iniciales
+[33md407d11[m[33m ([m[1;32mmain[m[33m)[m Carpetas iniciales
+[33m8f84bca[m[33m ([m[1;31morigin/RamaMay[m[33m)[m Primer Commit
+[33maa84e9b[m Initial commit
