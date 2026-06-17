@@ -1,4 +1,4 @@
-// lib/domain/entities/user_entities.dart
+
 class UserEntity {
   final String id;
   final String email;

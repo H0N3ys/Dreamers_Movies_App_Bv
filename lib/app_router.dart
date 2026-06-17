@@ -1,6 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:dreamers_movies_app_bv/presentation/screens/profile/profile_screen.dart';
+
 import 'package:dreamers_movies_app_bv/presentation/screens/splash_screen.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/auth/local_auth_screen.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/auth/login_screen.dart';
@@ -64,10 +64,5 @@ final appRouter = GoRouter(
       name: SearchScreen.name,
       builder: (context, state) => const SearchScreen(),
     ),
-    GoRoute(
-  path: '/profile',
-  name: ProfileScreen.name,
-  builder: (context, state) => const ProfileScreen(),
-),
   ],
 );

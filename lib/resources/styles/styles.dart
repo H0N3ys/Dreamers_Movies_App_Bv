@@ -4,12 +4,6 @@ import '../colors/colors.dart';
 class AppTheme {
   static const String primaryFont = 'Output';
   static const String secondaryFont = 'WorkSans';
-
-
-
-
-
-
   static const Color primaryColor = Color(0xFFFFFFFF); // Blanco
   static const Color secondaryColor = Color(0xFF152A72); // Azul
   static const Color accentColor = Color(0xFF020202); // Negro
@@ -21,10 +15,10 @@ class AppTheme {
           seedColor: AppColors.secondaryColor,
           brightness: Brightness.light, 
         ),
-        scaffoldBackgroundColor: Colors.white, // <-- Regresa a blanco para el Login
+        scaffoldBackgroundColor: Colors.white, 
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.white,
-          foregroundColor: Colors.black, // <-- Textos oscuros arriba
+          foregroundColor: Colors.black, 
           centerTitle: true,
           elevation: 0,
         ),
@@ -41,7 +35,7 @@ class AppTheme {
         textTheme: const TextTheme(
           titleLarge: TextStyle(
             fontFamily: secondaryFont,
-            color: Colors.black87, // <-- Textos oscuros para que se lean en el Login
+            color: Colors.black87, 
             fontWeight: FontWeight.bold,
             fontSize: 22,
           ),
