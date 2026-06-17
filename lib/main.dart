@@ -8,10 +8,8 @@ import 'package:dreamers_movies_app_bv/resources/styles/styles.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // 1. Cargar el archivo .env de la raíz
   await dotenv.load(fileName: ".env");
   
-  // 2. Inicializar Supabase con las variables reales
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL']!,
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,

@@ -1,8 +1,4 @@
-//Primera estructura de datos de nuestra aplicacion, la forma en que nosotros lo definimos
-//Esto es lo que utilizaremos, no lo que venga directamente de una API
-
-class Movie 
-{
+class Movie {
   final bool adult;
   final String backdropPath;
   final List<String> genreIds;
@@ -18,9 +14,7 @@ class Movie
   final double voteAverage;
   final int voteCount;
 
-  Movie
-  (
-    {
+  Movie({
     required this.adult,
     required this.backdropPath,
     required this.genreIds,
@@ -35,6 +29,30 @@ class Movie
     required this.video,
     required this.voteAverage,
     required this.voteCount,
-    }
-  );
+  });
+
+  factory Movie.fromJson(Map<String, dynamic> json) {
+    return Movie(
+      adult: json['adult'] ?? false,
+      backdropPath: json['backdrop_path'] != null
+          ? 'https://image.tmdb.org/t/p/w500${json['backdrop_path']}'
+          : '',
+      genreIds: json['genre_ids'] != null
+          ? List<String>.from(json['genre_ids'].map((x) => x.toString()))
+          : [],
+      id: json['id'] ?? 0,
+      originalLanguage: json['original_language'] ?? '',
+      originalTitle: json['original_title'] ?? '',
+      overview: json['overview'] ?? '',
+      popularity: (json['popularity'] ?? 0).toDouble(),
+      posterPath: json['poster_path'] != null
+          ? 'https://image.tmdb.org/t/p/w500${json['poster_path']}'
+          : 'https://via.placeholder.com/500x750?text=Sin+Poster',
+      releaseDate: DateTime.tryParse(json['release_date'] ?? '') ?? DateTime.now(),
+      title: json['title'] ?? '',
+      video: json['video'] ?? false,
+      voteAverage: (json['vote_average'] ?? 0).toDouble(),
+      voteCount: json['vote_count'] ?? 0,
+    );
+  }
 }

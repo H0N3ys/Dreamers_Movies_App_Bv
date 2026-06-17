@@ -44,6 +44,7 @@ dependencies:
   video_player: ^2.11.1
   local_auth: ^3.0.1
   shared_preferences: ^2.5.5
+  dio: ^5.9.2
 
   
 
@@ -71,7 +72,7 @@ flutter:
   # para darle permiso a la carpeta:
   assets:
     - assets/images/
-    - assets/icons/
+    #- assets/icons/
     - assets/videos/
     - .env
 

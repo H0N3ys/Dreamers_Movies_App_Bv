@@ -2,8 +2,9 @@ import 'package:go_router/go_router.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/splash_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/auth/local_auth_screen.dart';
-import 'package:dreamers_movies_app_bv/presentation/screens/home_screen.dart';
-
+import 'package:dreamers_movies_app_bv/presentation/screens/movies/home_screen.dart';
+import 'package:dreamers_movies_app_bv/presentation/screens/auth/login_screen.dart';
+import 'package:dreamers_movies_app_bv/presentation/screens/auth/register_screen.dart';
 final appRouter = GoRouter(
   initialLocation: "/splash",
   
