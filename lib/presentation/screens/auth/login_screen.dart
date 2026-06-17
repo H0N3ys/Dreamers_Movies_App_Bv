@@ -2,13 +2,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
 import 'package:dreamers_movies_app_bv/resources/styles/styles.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/auth/register_screen.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/custom_text_field.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/custom_filled_button.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/divider_with_text.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginScreen extends StatefulWidget {
   static const name = 'login-screen';
@@ -20,12 +20,26 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool _showBiometric = false;
+  late final GlobalKey<FormState> _formKey;
+  late final TextEditingController _emailController;
+  late final TextEditingController _passwordController;
 
   @override
   void initState() {
     super.initState();
+    _formKey = GlobalKey<FormState>();
+    _emailController = TextEditingController();
+    _passwordController = TextEditingController();
     _checkFirstLogin();
   }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
 // Función para verificar si es el primer inicio de sesión y mostrar la opción biométrica
   Future<void> _checkFirstLogin() async {
     final prefs = await SharedPreferences.getInstance();
@@ -34,11 +48,94 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
+ Future<void> _handleLogin() async {
+    if (_formKey.currentState!.validate()) {
+      try {
+        // Mostramos un pequeño feedback visual de que está cargando (Opcional, si tienes un indicador)
+        // Autenticación REAL con Supabase
+        await Supabase.instance.client.auth.signInWithPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
+
+        // Si Supabase no lanza error, significa que el login fue exitoso
+        // Guardamos la bandera para habilitar la biometría la próxima vez
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('first_login_completed', true);
+
+        // Ahora sí, el router nos dejará pasar al Home
+        if (mounted) {
+          context.go('/');
+        }
+        
+      } on AuthException catch (e) {
+        // Atrapamos errores de Supabase (ej. contraseña incorrecta)
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: Correo o contraseña incorrectos'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
+      } catch (e) {
+        // Cualquier otro error de internet o del sistema
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Ocurrió un error inesperado al conectar'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _showResetPasswordDialog() async {
+    final emailController = TextEditingController();
+    
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Recuperar contraseña'),
+        content: TextField(
+          controller: emailController,
+          decoration: const InputDecoration(
+            hintText: 'Ingresa tu correo electrónico',
+            border: OutlineInputBorder(),
+          ),
+          keyboardType: TextInputType.emailAddress,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              // Aquí puedes agregar la lógica para enviar correo de recuperación
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Se envió un correo de recuperación'),
+                ),
+              );
+            },
+            child: const Text('Enviar'),
+          ),
+        ],
+      ),
+    );
+    emailController.dispose();
+  }
+
 
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -144,15 +241,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   
                   CustomFilledButton(
                     text: 'Iniciar Sesión',
-                    onPressed: () async {
-                      final prefs = await SharedPreferences.getInstance();
-                      await prefs.setString('auth_token', 'token_falso_12345');
-                      await prefs.setBool('first_login_completed', true);
-
-                      if (context.mounted) {
-                        context.go('/');
-                      }
-                    },
+                    onPressed: _handleLogin,
                   ),
                   // Mostrar la sección biométrica solo si el usuario ya ha iniciado sesión al menos una vez
                  if (_showBiometric) ..._buildBiometricSection(context),
