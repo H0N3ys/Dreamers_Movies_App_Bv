@@ -40,7 +40,6 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-// Función para verificar si es el primer inicio de sesión y mostrar la opción biométrica
   Future<void> _checkFirstLogin() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -51,25 +50,19 @@ class _LoginScreenState extends State<LoginScreen> {
  Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
       try {
-        // Mostramos un pequeño feedback visual de que está cargando (Opcional, si tienes un indicador)
-        // Autenticación REAL con Supabase
         await Supabase.instance.client.auth.signInWithPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
 
-        // Si Supabase no lanza error, significa que el login fue exitoso
-        // Guardamos la bandera para habilitar la biometría la próxima vez
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('first_login_completed', true);
 
-        // Ahora sí, el router nos dejará pasar al Home
         if (mounted) {
           context.go('/');
         }
         
       } on AuthException catch (e) {
-        // Atrapamos errores de Supabase (ej. contraseña incorrecta)
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -79,7 +72,6 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         }
       } catch (e) {
-        // Cualquier otro error de internet o del sistema
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -114,7 +106,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           TextButton(
             onPressed: () {
-              // Aquí puedes agregar la lógica para enviar correo de recuperación
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -243,7 +234,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     text: 'Iniciar Sesión',
                     onPressed: _handleLogin,
                   ),
-                  // Mostrar la sección biométrica solo si el usuario ya ha iniciado sesión al menos una vez
                  if (_showBiometric) ..._buildBiometricSection(context),
 
 
@@ -275,7 +265,6 @@ class _LoginScreenState extends State<LoginScreen> {
   return [
     const SizedBox(height: 24),
     
-    // Un texto un poco más conversacional
     DividerWithText(
       text: 'o también',
       color: AppColors.secondaryColor,
@@ -289,17 +278,16 @@ class _LoginScreenState extends State<LoginScreen> {
         onPressed: () {
           context.pushNamed('local-auth-screen');
         },
-        icon: const Icon(Icons.fingerprint_rounded), // Ícono con bordes redondeados
+        icon: const Icon(Icons.fingerprint_rounded), 
         
-        // Texto humanizado y cercano
         label: const Text('Entrar con huella o rostro'), 
         
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.secondaryColor,
           side: const BorderSide(color: AppColors.secondaryColor, width: 2),
-          padding: const EdgeInsets.symmetric(vertical: 14), // Un poco más alto para que sea fácil de presionar con el pulgar
+          padding: const EdgeInsets.symmetric(vertical: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12), // Bordes más suaves y modernos
+            borderRadius: BorderRadius.circular(12), 
           ),
         ),
       ),

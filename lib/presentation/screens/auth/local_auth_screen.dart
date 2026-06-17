@@ -95,7 +95,6 @@ class _LocalAuthScreenState extends State<LocalAuthScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Icono de huella
                 Icon(
                   Icons.fingerprint,
                   size: 120,
@@ -117,7 +116,6 @@ class _LocalAuthScreenState extends State<LocalAuthScreen> {
                 
                 const SizedBox(height: 12),
                 
-                // Estado
                 Text(
                   _estado,
                   textAlign: TextAlign.center,
@@ -158,10 +156,8 @@ class _LocalAuthScreenState extends State<LocalAuthScreen> {
                 
                 const SizedBox(height: 24),
                 
-                // Opción alternativa
                 TextButton(
                   onPressed: () {
-                    // Ir a login normal como fallback
                     context.goNamed('login-screen');
                   },
                   child: Text(

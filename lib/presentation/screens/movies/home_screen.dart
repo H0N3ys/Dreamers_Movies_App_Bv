@@ -19,7 +19,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final MovieDatasources _movieDatasource = TmdbDatasource();
   
-  // Ahora tenemos dos listas vivas
   List<Movie> _nowPlayingMovies = [];
   List<Movie> _popularMoviesApi = [];
   bool _isLoadingMovies = true;
@@ -38,13 +37,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadAllMovies() async {
     try {
-      // Pedimos ambas listas al mismo tiempo
       final nowPlaying = await _movieDatasource.getNowPlaying();
       final popular = await _movieDatasource.getPopular();
       
       setState(() {
         _nowPlayingMovies = nowPlaying;
-        // Tomamos solo las primeras 6 para que el carrusel superior no sea eterno
         _popularMoviesApi = popular.take(6).toList(); 
         _isLoadingMovies = false;
       });
@@ -72,7 +69,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     const SizedBox(height: 16),
                     
-                    // 1. HEADER
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Row(
@@ -119,7 +115,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     const SizedBox(height: 24),
 
-                    // 2. BUSCADOR
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Container(
@@ -146,7 +141,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     const SizedBox(height: 24),
 
-                    // 3. CARRUSEL HERO (CONECTADO A LA API)
                     SizedBox(
                       height: 200,
                       child: PageView.builder(
@@ -160,7 +154,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         itemCount: _popularMoviesApi.length,
                         itemBuilder: (context, index) {
                           final movie = _popularMoviesApi[index];
-                          // Usamos backdropPath porque es una imagen horizontal, ideal para banners
                           final imageUrl = movie.backdropPath.isNotEmpty ? movie.backdropPath : movie.posterPath;
                           
                           return Container(
@@ -199,7 +192,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     const SizedBox(height: 12),
 
-                    // 4. INDICADOR DE PUNTOS
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: List.generate(
@@ -219,7 +211,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     const SizedBox(height: 24),
 
-                    // 5. CATEGORÍAS
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Text(
@@ -267,7 +258,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     const SizedBox(height: 32),
 
-                    // 6. EN CARTELERA (CONECTADO A LA API)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Text(
@@ -361,7 +351,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
       ),
       
-      // 7. BOTTOM NAVIGATION BAR
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: const BoxDecoration(color: Color(0xFF12192B)),

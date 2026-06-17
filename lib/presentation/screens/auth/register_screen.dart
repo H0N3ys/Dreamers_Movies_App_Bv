@@ -30,10 +30,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
 
   Future<void> _handleRegister() async {
-    // Validar formulario
     if (!_formKey.currentState!.validate()) return;
     
-    // Validaciones adicionales
     if (_passwordController.text != _confirmPasswordController.text) {
       _showError('Las contraseñas no coinciden');
       return;
@@ -47,7 +45,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Registrar en Supabase
       final response = await supabase.auth.signUp(
         email: _emailController.text.trim(),
         password: _passwordController.text,
@@ -59,7 +56,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       if (response.user != null && mounted) {
-        // Mostrar éxito
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('¡Registro exitoso! Ahora inicia sesión'),
@@ -68,7 +64,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         );
         
-        // Limpiar campos
         _nombresController.clear();
         _apellidosController.clear();
         _emailController.clear();
@@ -76,7 +71,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _passwordController.clear();
         _confirmPasswordController.clear();
         
-        // Ir a login
         context.pushNamed(LoginScreen.name);
       }
     } on AuthException catch (e) {
@@ -139,7 +133,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   
                   const SizedBox(height: 24),
                   
-                  // Subtítulo
                   Text(
                     'Crear cuenta',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -149,7 +142,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   
                   const SizedBox(height: 32),
                   
-                  // Nombres
                   CustomTextField(
                     label: 'Nombres',
                     hintText: 'Carlos Adrian',
@@ -168,7 +160,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   
                   const SizedBox(height: 16),
                   
-                  // Apellidos
                   CustomTextField(
                     label: 'Apellidos',
                     hintText: 'Zamorano Rodriguez',
@@ -184,7 +175,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   
                   const SizedBox(height: 16),
                   
-                  // Email
                   CustomTextField(
                     label: 'Correo Electrónico',
                     hintText: 'ejemplo@correo.com',
@@ -204,7 +194,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   
                   const SizedBox(height: 16),
                   
-                  // Teléfono
                   CustomTextField(
                     label: 'Teléfono (opcional)',
                     hintText: '998 000 0000',
@@ -221,12 +210,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   
                   const SizedBox(height: 16),
                   
-                  // Contraseña - SIN suffixIcon (el widget ya lo maneja internamente)
                   CustomTextField(
                     label: 'Contraseña',
                     hintText: 'Mínimo 6 caracteres',
                     icon: Icons.lock_outline,
-                    obscureText: true,  // ← Esto ya muestra el ícono de visibilidad automáticamente
+                    obscureText: true, 
                     controller: _passwordController,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -241,12 +229,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   
                   const SizedBox(height: 16),
                   
-                  // Confirmar Contraseña - SIN suffixIcon
                   CustomTextField(
                     label: 'Confirmar Contraseña',
                     hintText: 'Repite tu contraseña',
                     icon: Icons.lock_outline,
-                    obscureText: true,  // ← Esto ya muestra el ícono de visibilidad automáticamente
+                    obscureText: true,  
                     controller: _confirmPasswordController,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -258,7 +245,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   
                   const SizedBox(height: 32),
                   
-                  // Botón Crear Cuenta
                   CustomFilledButton(
                     text: _isLoading ? 'Creando cuenta...' : 'Crear Cuenta',
                     onPressed: _isLoading ? null : _handleRegister,
@@ -266,7 +252,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   
                   const SizedBox(height: 16),
                   
-                  // Link a login
                   TextButton(
                     onPressed: () {
                       context.pushNamed(LoginScreen.name);

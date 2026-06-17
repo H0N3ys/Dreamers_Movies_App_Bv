@@ -4,7 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../entities/user_entities.dart';
 
 class UserRepository {
-  // Obtener usuario actual
   Future<UserEntity?> getCurrentUser() async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return null;

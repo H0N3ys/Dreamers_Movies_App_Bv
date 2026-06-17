@@ -8,9 +8,7 @@ import 'package:dreamers_movies_app_bv/presentation/screens/auth/register_screen
 final appRouter = GoRouter(
   initialLocation: "/splash",
   
-  // LÓGICA DE PROTECCIÓN DE RUTAS
   redirect: (context, state) {
-    // Leemos la sesión directamente de Supabase
     final session = Supabase.instance.client.auth.currentSession;
     final estaAutenticado = session != null;
 
@@ -19,17 +17,15 @@ final appRouter = GoRouter(
     final isGoingToSplash = state.matchedLocation == '/splash';
     final isGoingToLocalAuth = state.matchedLocation == '/local-auth';
 
-    // Si NO está autenticado y trata de entrar a una ruta privada (como el Home)
     if (!estaAutenticado && !isGoingToLogin && !isGoingToRegister && !isGoingToSplash) {
-      return '/login'; // Lo pateamos al login
+      return '/login';
     }
 
-    // Si SÍ está autenticado y trata de ir al login o registro por error
     if (estaAutenticado && (isGoingToLogin || isGoingToRegister)) {
-      return '/'; // Lo mandamos directo al Home
+      return '/'; 
     }
 
-    return null; // La ruta es válida, deja que pase
+    return null; 
   },
 
   routes: [
