@@ -1,13 +1,12 @@
 // lib/auth/register_screen.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
 import 'package:dreamers_movies_app_bv/resources/styles/styles.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/custom_text_field.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/custom_filled_button.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/auth/login_screen.dart';
-import 'package:dreamers_movies_app_bv/domain/datasources/supabase_datasource.dart';
+import 'package:dreamers_movies_app_bv/domain/repositories/user_repositories.dart';
 
 class RegisterScreen extends StatefulWidget {
   static const name = 'register-screen';
@@ -25,12 +24,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
   
+  final UserRepository _userRepository = UserRepository();
   bool _isLoading = false;
-  
   final _formKey = GlobalKey<FormState>();
 
   Future<void> _handleRegister() async {
-    // Validar formulario
     if (!_formKey.currentState!.validate()) return;
     
     // Validaciones adicionales
@@ -47,18 +45,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Registrar en Supabase
-      final response = await supabase.auth.signUp(
+      // ✅ REGISTRO CON SQLITE
+      final user = await _userRepository.register(
         email: _emailController.text.trim(),
         password: _passwordController.text,
-        data: {
-          'nombres': _nombresController.text.trim(),
-          'apellidos': _apellidosController.text.trim(),
-          'telefono': _telefonoController.text.trim(),
-        },
+        nombres: _nombresController.text.trim(),
+        apellidos: _apellidosController.text.trim(),
+        telefono: _telefonoController.text.trim(),
       );
 
-      if (response.user != null && mounted) {
+      if (user != null && mounted) {
         // Mostrar éxito
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -79,10 +75,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         // Ir a login
         context.pushNamed(LoginScreen.name);
       }
-    } on AuthException catch (e) {
-      _showError(SupabaseHelper.getErrorMessage(e));
     } catch (e) {
-      _showError('Error al registrar: $e');
+      _showError(e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -221,12 +215,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   
                   const SizedBox(height: 16),
                   
-                  // Contraseña - SIN suffixIcon (el widget ya lo maneja internamente)
+                  // Contraseña
                   CustomTextField(
                     label: 'Contraseña',
                     hintText: 'Mínimo 6 caracteres',
                     icon: Icons.lock_outline,
-                    obscureText: true,  // ← Esto ya muestra el ícono de visibilidad automáticamente
+                    obscureText: true,
                     controller: _passwordController,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -241,12 +235,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   
                   const SizedBox(height: 16),
                   
-                  // Confirmar Contraseña - SIN suffixIcon
+                  // Confirmar Contraseña
                   CustomTextField(
                     label: 'Confirmar Contraseña',
                     hintText: 'Repite tu contraseña',
                     icon: Icons.lock_outline,
-                    obscureText: true,  // ← Esto ya muestra el ícono de visibilidad automáticamente
+                    obscureText: true,
                     controller: _confirmPasswordController,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
