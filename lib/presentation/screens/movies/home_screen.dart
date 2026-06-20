@@ -1,14 +1,18 @@
-import 'package:dreamers_movies_app_bv/domain/datasources/supabase_datasource.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+
 import 'package:dreamers_movies_app_bv/domain/entities/movie_entities.dart';
 import 'package:dreamers_movies_app_bv/domain/datasources/movie_datasources.dart';
 import 'package:dreamers_movies_app_bv/infrastructure/datasources/tmdb_datasource.dart';
+import 'package:dreamers_movies_app_bv/domain/datasources/local_reviews_datasource.dart';
+import 'package:dreamers_movies_app_bv/domain/datasources/database_helper.dart';
 
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_header.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_search_bar.dart';
-import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_banner_carousel.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_category_filter.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_section_header.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/movie_card.dart';
@@ -24,323 +28,329 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final MovieDatasources _movieDatasource = TmdbDatasource();
-  // Instanciamos el datasource de reseñas
-  final SupabaseReviewsDatasource _reviewsDatasource = SupabaseReviewsDatasource();
+  final LocalReviewsDatasource _reviewsDatasource = LocalReviewsDatasource();
+  final DatabaseHelper _dbHelper = DatabaseHelper();
 
+  // Listas de estilo Netflix
   List<Movie> _nowPlayingMovies = [];
   List<Movie> _popularMoviesApi = [];
-  bool _isLoadingMovies = true;
+  List<Movie> _topRatedMovies = [];
+  List<Movie> _upcomingMovies = []; // Nueva lista
+  
+  // Para los filtros
+  List<Movie> _allMoviesPool = []; 
+  List<Movie> _filteredMovies = []; 
+  
+  List<Map<String, dynamic>> _recentReviews = [];
 
+  bool _isLoadingMovies = true;
   int _selectedCategoryIndex = 0;
   int _currentNavIndex = 0;
 
-  final List<String> _categories = [
-    'Todo',
-    'Comedia',
-    'Animación',
-    'Documentales',
+  // Categorías con sus IDs oficiales de TMDB
+  final List<Map<String, dynamic>> _categories = [
+    {'name': 'Todo', 'id': 0},
+    {'name': 'Acción', 'id': 28},
+    {'name': 'Comedia', 'id': 35},
+    {'name': 'Ciencia Ficción', 'id': 878},
+    {'name': 'Animación', 'id': 16},
+    {'name': 'Terror', 'id': 27},
   ];
 
   @override
   void initState() {
     super.initState();
-    _loadAllMovies();
+    _loadInitialData();
   }
 
-  Future<void> _loadAllMovies() async {
+  Future<void> _loadInitialData() async {
     try {
-      final nowPlaying = await _movieDatasource.getNowPlaying();
-      final popular = await _movieDatasource.getPopular();
+      final results = await Future.wait([
+        _movieDatasource.getNowPlaying(),
+        _movieDatasource.getPopular(),
+        _movieDatasource.getTopRated(),
+        _movieDatasource.getUpcoming(), // Cargamos la nueva sección
+        _loadRecentReviews(),
+      ]);
 
       setState(() {
-        _nowPlayingMovies = nowPlaying;
-        _popularMoviesApi = popular.take(6).toList();
+        _nowPlayingMovies = results[0] as List<Movie>;
+        _popularMoviesApi = results[1] as List<Movie>;
+        _topRatedMovies = results[2] as List<Movie>;
+        _upcomingMovies = results[3] as List<Movie>;
+        
+        // Creamos un "pozo" con todas las películas juntas para que el filtro tenga de donde escoger
+        _allMoviesPool = [
+          ..._nowPlayingMovies, 
+          ..._popularMoviesApi, 
+          ..._topRatedMovies, 
+          ..._upcomingMovies
+        ];
+        
+        // Eliminamos duplicados por ID para que no salgan repetidas en el filtro
+        final Map<int, Movie> uniqueMovies = {for (var m in _allMoviesPool) m.id: m};
+        _allMoviesPool = uniqueMovies.values.toList();
+        
+        // Al inicio, la sección filtrada muestra las populares
+        _filteredMovies = _popularMoviesApi; 
         _isLoadingMovies = false;
       });
     } catch (e) {
       setState(() => _isLoadingMovies = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error al cargar películas de TMDB')),
+          SnackBar(content: Text('Error al cargar datos: $e')),
         );
       }
     }
   }
 
-
-Future<void> _submitReview(Movie movie, int rating, String comment) async {
+  Future<void> _loadRecentReviews() async {
     try {
-      final supabaseClient = Supabase.instance.client;
-      final currentUser = supabaseClient.auth.currentUser;
-
-      if (currentUser == null) {
-        throw Exception('No hay una sesión activa. Inicia sesión de nuevo.');
-      }
-
-      // 1. Obtener el id_usuario desde el auth_user_id
-      final userResp = await supabaseClient
-          .from('usuario')
-          .select('id_usuario')
-          .eq('auth_user_id', currentUser.id)
-          .single();
-
-      // 2. Obtener el id_perfil usando el id_usuario
-      final perfilResp = await supabaseClient
-          .from('perfil')
-          .select('id_perfil')
-          .eq('id_usuario', userResp['id_usuario'])
-          .limit(1)
-          .single();
-
-      final int perfilIdActual = perfilResp['id_perfil'];
-
-      // 3. Guardar la reseña usando tu Datasource
-      await _reviewsDatasource.saveReview(
-        movie: movie,
-        idPerfil: perfilIdActual, // ¡Ya usamos el ID real!
-        rating: rating,
-        comment: comment,
-      );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('¡Tu reseña se ha guardado!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
+      final db = await _dbHelper.database;
+      final reviews = await db.rawQuery('''
+        SELECT r.puntuacion, r.comentario, r.fecha_creacion, p.titulo, p.caratula_url, u.nombres as autor
+        FROM resena r
+        JOIN pelicula p ON r.id_pelicula = p.id_pelicula
+        JOIN perfil pr ON r.id_perfil = pr.id_perfil
+        JOIN usuario u ON pr.id_usuario = u.id_usuario
+        ORDER BY r.fecha_creacion DESC
+        LIMIT 5
+      ''');
+      setState(() => _recentReviews = reviews);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      print('Error cargando reseñas: $e');
     }
   }
 
-  void _showReviewModal(BuildContext context, Movie movie) {
-    int currentRating = 5;
-    final TextEditingController commentController = TextEditingController();
+  // --- El Filtro Mágico ---
+  void _filterByCategory(int index) {
+    setState(() {
+      _selectedCategoryIndex = index;
+      if (index == 0) {
+        // Si elige "Todo", mostramos las populares
+        _filteredMovies = _popularMoviesApi;
+      } else {
+        // Buscamos el ID del género seleccionado (Ej. Acción = 28)
+        final int targetGenreId = _categories[index]['id'];
+        
+        // Filtramos buscando en TODAS las películas descargadas
+        _filteredMovies = _allMoviesPool.where((movie) {
+          // Asumiendo que en tu entity se llama genreIds. 
+          // Si te marca error aquí, verifica el nombre exacto en movie_entities.dart
+          return movie.genreIds.contains(targetGenreId); 
+        }).toList();
+      }
+    });
+  }
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.secondaryColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+ 
+
+  Widget _buildAnimatedCarousel(List<Movie> movies) {
+    if (movies.isEmpty) return const SizedBox();
+    return CarouselSlider.builder(
+      itemCount: movies.length,
+      options: CarouselOptions(
+        height: 220.0,
+        autoPlay: true,
+        autoPlayInterval: const Duration(seconds: 4),
+        autoPlayAnimationDuration: const Duration(milliseconds: 800),
+        autoPlayCurve: Curves.fastOutSlowIn,
+        enlargeCenterPage: true,
+        viewportFraction: 0.85,
+        enableInfiniteScroll: true,
       ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
-                left: 20,
-                right: 20,
-                top: 20,
+      itemBuilder: (context, index, realIndex) {
+        final movie = movies[index];
+        return GestureDetector(
+          onTap: () => context.pushNamed('movie-details', extra: movie),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 5.0),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              image: DecorationImage(
+                image: NetworkImage('https://image.tmdb.org/t/p/w500${movie.backdropPath}'),
+                fit: BoxFit.cover,
+                colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.3), BlendMode.darken),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Reseñar: ${movie.title}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  
-                  const Text('Puntuación:', style: TextStyle(color: Colors.white70)),
-                  Slider(
-                    value: currentRating.toDouble(),
-                    min: 1,
-                    max: 5,
-                    divisions: 4,
-                    label: currentRating.toString(),
-                    activeColor: Colors.amber,
-                    onChanged: (double value) {
-                      setModalState(() {
-                        currentRating = value.toInt();
-                      });
-                    },
-                  ),
-
-                  TextField(
-                    controller: commentController,
-                    maxLines: 3,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      hintText: '¿Qué te pareció la película?',
-                      hintStyle: const TextStyle(color: Colors.white38),
-                      filled: true,
-                      fillColor: Colors.white.withOpacity(0.1),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.amber,
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      onPressed: () {
-                        _submitReview(
-                          movie,
-                          currentRating,
-                          commentController.text,
-                        );
-                        Navigator.pop(context);
-                      },
-                      child: const Text(
-                        'Guardar Reseña',
-                        style: TextStyle(
-                          color: Colors.black, 
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                ],
+            ),
+            child: Align(
+              alignment: Alignment.bottomLeft,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  movie.title,
+                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, shadows: [Shadow(color: Colors.black, blurRadius: 4)]),
+                ),
               ),
-            );
-          },
+            ),
+          ),
         );
       },
     );
   }
 
-  
+  // Helper para crear filas horizontales estilo Netflix
+  Widget _buildMovieRow(List<Movie> movies) {
+    if (movies.isEmpty) {
+      return const SizedBox(
+        height: 230, 
+        child: Center(child: Text('No hay películas', style: TextStyle(color: Colors.white54)))
+      );
+    }
+    return SizedBox(
+      height: 230,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 22),
+        itemCount: movies.length,
+        itemBuilder: (context, index) {
+          final movie = movies[index];
+          return GestureDetector(
+            onTap: () => context.pushNamed('movie-details', extra: movie),
+            child: MovieCard(movie: movie),
+          );
+        },
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    // Extraemos solo los nombres de la lista de mapas para el widget HomeCategoryFilter
+    final List<String> categoryNames = _categories.map((c) => c['name'] as String).toList();
+
     return Scaffold(
       backgroundColor: AppColors.secondaryColor,
       extendBody: true,
       body: _isLoadingMovies
-          ? const Center(
-              child: CircularProgressIndicator(color: Colors.white),
-            )
+          ? const Center(child: CircularProgressIndicator(color: Colors.white))
           : SafeArea(
               bottom: false,
               child: CustomScrollView(
                 physics: const BouncingScrollPhysics(),
                 slivers: [
-                  //header
                   const SliverToBoxAdapter(child: SizedBox(height: 20)),
                   const SliverToBoxAdapter(child: HomeHeader()),
-
-                  //barra de busquedAA
                   const SliverToBoxAdapter(child: SizedBox(height: 20)),
                   const SliverToBoxAdapter(child: HomeSearchBar()),
-
-                  //carrusel
                   const SliverToBoxAdapter(child: SizedBox(height: 20)),
-                  SliverToBoxAdapter(
-                    child: HomeBannerCarousel(movies: _popularMoviesApi),
-                  ),
 
-                  // las categorias
+                  // Carrusel Destacado (En Cartelera)
+                  SliverToBoxAdapter(child: _buildAnimatedCarousel(_nowPlayingMovies.take(6).toList())),
+
+                  // Filtro por Categorías
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                  SliverToBoxAdapter(
-                    child: HomeSectionHeader(title: 'Categorías'),
-                  ),
+                  SliverToBoxAdapter(child: HomeSectionHeader(title: 'Explorar')),
                   const SliverToBoxAdapter(child: SizedBox(height: 14)),
                   SliverToBoxAdapter(
                     child: HomeCategoryFilter(
-                      categories: _categories,
+                      categories: categoryNames,
                       selectedIndex: _selectedCategoryIndex,
-                      onCategorySelected: (index) {
-                        setState(() => _selectedCategoryIndex = index);
-                      },
+                      onCategorySelected: _filterByCategory,
                     ),
                   ),
 
-                  // más popular
+                  // Fila 1: Resultados del Filtro o Populares
                   const SliverToBoxAdapter(child: SizedBox(height: 28)),
                   SliverToBoxAdapter(
                     child: HomeSectionHeader(
-                      title: 'Most popular',
-                      onSeeAll: () {},
+                      title: _selectedCategoryIndex == 0 ? 'Tendencias actuales' : 'Resultados de tu filtro',
                     ),
                   ),
                   const SliverToBoxAdapter(child: SizedBox(height: 14)),
-                  SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: 230,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(horizontal: 22),
-                        itemCount: _nowPlayingMovies.length,
-                        itemBuilder: (context, index) {
-                          final movie = _nowPlayingMovies[index];
-                          // Envolvemos el MovieCard para detectar el clic
-                          return GestureDetector(
-                            onTap: () => _showReviewModal(context, movie),
-                            child: MovieCard(movie: movie),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
+                  SliverToBoxAdapter(child: _buildMovieRow(_filteredMovies)),
 
-                  //en cartelera
+                  // Fila 2: Próximos Estrenos
                   const SliverToBoxAdapter(child: SizedBox(height: 28)),
-                  SliverToBoxAdapter(
-                    child: HomeSectionHeader(
-                      title: 'En Cartelera',
-                      onSeeAll: () {},
-                    ),
-                  ),
+                  SliverToBoxAdapter(child: HomeSectionHeader(title: 'Próximos Estrenos')),
                   const SliverToBoxAdapter(child: SizedBox(height: 14)),
+                  SliverToBoxAdapter(child: _buildMovieRow(_upcomingMovies)),
+
+                  // Fila 3: Aclamadas por la crítica
+                  const SliverToBoxAdapter(child: SizedBox(height: 28)),
+                  SliverToBoxAdapter(child: HomeSectionHeader(title: 'Aclamadas por la crítica')),
+                  const SliverToBoxAdapter(child: SizedBox(height: 14)),
+                  SliverToBoxAdapter(child: _buildMovieRow(_topRatedMovies)),
+
+                  // Sección: Reseñas de la Comunidad
+                  const SliverToBoxAdapter(child: SizedBox(height: 36)),
                   SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: 230,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(horizontal: 22),
-                        itemCount: _popularMoviesApi.length,
-                        itemBuilder: (context, index) {
-                          final movie = _popularMoviesApi[index];
-                          // Envolvemos el MovieCard para detectar el clic
-                          return GestureDetector(
-                            onTap: () => _showReviewModal(context, movie),
-                            child: MovieCard(movie: movie),
-                          );
-                        },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 22),
+                      child: Text(
+                        'Actividad de la comunidad',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                  
+                  if (_recentReviews.isEmpty)
+                    const SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 22),
+                        child: Text('Aún no hay reseñas. ¡Sé el primero!', style: TextStyle(color: Colors.white54)),
+                      ),
+                    )
+                  else
+                    SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final review = _recentReviews[index];
+                          return Container(
+                            margin: const EdgeInsets.only(left: 22, right: 22, bottom: 12),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      review['autor'] ?? 'Usuario',
+                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                    ),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.star, color: Colors.amber, size: 16),
+                                        const SizedBox(width: 4),
+                                        Text('${review['puntuacion']}/5', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Reseñó: ${review['titulo']}',
+                                  style: const TextStyle(color: AppColors.accentColor, fontSize: 12, fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  review['comentario'] ?? '',
+                                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                        childCount: _recentReviews.length,
+                      ),
+                    ),
 
                   const SliverToBoxAdapter(child: SizedBox(height: 100)),
                 ],
               ),
             ),
-
-      //boton nav
-      bottomNavigationBar: HomeBottomNav(
-        currentIndex: _currentNavIndex,
-        onTap: (index) => setState(() => _currentNavIndex = index),
-      ),
+      bottomNavigationBar: const HomeBottomNav(),
     );
   }
 }

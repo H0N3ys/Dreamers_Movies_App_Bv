@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
 import 'package:dreamers_movies_app_bv/domain/repositories/user_repositories.dart';
 import 'package:dreamers_movies_app_bv/domain/entities/user_entities.dart';
@@ -102,34 +103,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const Spacer(),
                 
              
-                Center(
-                  child: TextButton.icon(
-                    onPressed: () async {
-                      await _userRepository.logout();
-                      if (context.mounted) context.go('/login');
-                    }, 
-                    icon: const Icon(Icons.logout, color: Colors.white54), 
-                    label: const Text(
-                      'Cerrar sesión', 
-                      style: TextStyle(color: Colors.white54)
-                    ),
-                  ),
-                ),
+Center(
+  child: TextButton.icon(
+    onPressed: () async {
+      try {
+        // 1. Limpiamos las preferencias guardadas en el Login
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.clear(); // Esto borra el 'is_logged_in' y datos del usuario
+
+        // 2. Cerramos sesión en el backend (Supabase/Firebase)
+        await _userRepository.logout();
+        
+        // 3. Navegamos de forma segura al Login
+        if (context.mounted) {
+          context.go('/login'); // Asegúrate de que esta sea la ruta correcta en tu router
+        }
+      } catch (e) {
+        // 4. Si algo falla, se lo mostramos al usuario sin que crashee la app
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al cerrar sesión: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }, 
+    icon: const Icon(Icons.logout, color: Colors.white54), 
+    label: const Text(
+      'Cerrar sesión', 
+      style: TextStyle(color: Colors.white54),
+    ),
+  ),
+),
                 const SizedBox(height: 20),
               ],
             ),
       ),
       
       // La barra de navegación
-      bottomNavigationBar: HomeBottomNav(
-        currentIndex: _currentNavIndex,
-        onTap: (index) {
-          setState(() => _currentNavIndex = index);
-          // Si toca inicio, lo regresamos al Home
-          if (index == 0) context.go('/');
-          if (index == 1) context.push('/search');
-        },
-      ),
+      bottomNavigationBar: const HomeBottomNav(),
     );
   }
 }

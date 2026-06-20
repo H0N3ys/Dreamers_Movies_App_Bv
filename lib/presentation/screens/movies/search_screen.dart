@@ -133,10 +133,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 ],
               ),
       ),
-      bottomNavigationBar: HomeBottomNav(
-        currentIndex: _currentNavIndex,
-        onTap: (index) => setState(() => _currentNavIndex = index),
-      ),
+      bottomNavigationBar: const HomeBottomNav(),
     );
   }
 

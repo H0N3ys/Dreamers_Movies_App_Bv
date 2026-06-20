@@ -1,6 +1,7 @@
+import 'package:dreamers_movies_app_bv/domain/entities/movie_entities.dart';
+import 'package:dreamers_movies_app_bv/presentation/screens/movies/favorites_screen.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/splash_screen.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/auth/local_auth_screen.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/auth/login_screen.dart';
@@ -8,30 +9,40 @@ import 'package:dreamers_movies_app_bv/presentation/screens/auth/register_screen
 import 'package:dreamers_movies_app_bv/presentation/screens/movies/home_screen.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/movies/search_screen.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/profile/profile_screen.dart';
+import 'package:dreamers_movies_app_bv/presentation/screens/movies/movie_details_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/splash',
 
-  redirect: (context, state) {
-    final session = Supabase.instance.client.auth.currentSession;
-    final estaAutenticado = session != null;
+redirect: (context, state) async {
+    final prefs = await SharedPreferences.getInstance();
+    final tieneCuenta = prefs.getBool('is_logged_in') ?? false;
+    final estaDesbloqueado = prefs.getBool('session_unlocked') ?? false;
 
     final isGoingToLogin = state.matchedLocation == '/login';
     final isGoingToRegister = state.matchedLocation == '/register';
     final isGoingToSplash = state.matchedLocation == '/splash';
+    final isGoingToLocalAuth = state.matchedLocation == '/local-auth';
 
-    if (!estaAutenticado &&
-        !isGoingToLogin &&
-        !isGoingToRegister &&
-        !isGoingToSplash) {
+    // 1. Si NO tiene cuenta, lo forzamos a ir al login (dejando pasar al splash y registro)
+    if (!tieneCuenta && !isGoingToLogin && !isGoingToRegister && !isGoingToSplash) {
       return '/login';
     }
 
-    if (estaAutenticado && (isGoingToLogin || isGoingToRegister)) {
+    // 2. Si TIENE cuenta, pero la app apenas se abrió (el candado está puesto)
+    if (tieneCuenta && !estaDesbloqueado) {
+      // Si intenta ir al Home, lo regresamos al login para que ponga huella o contraseña
+      if (!isGoingToLogin && !isGoingToLocalAuth && !isGoingToSplash) {
+        return '/login'; 
+      }
+    }
+
+    // 3. Si TIENE cuenta y YA QUITÓ EL CANDADO, va directo al Home (ya no le mostramos login)
+    if (tieneCuenta && estaDesbloqueado && (isGoingToLogin || isGoingToRegister || isGoingToSplash || isGoingToLocalAuth)) {
       return '/';
     }
 
-    return null;
+    return null; // Si todo está en orden, lo deja pasar
   },
 
   routes: [
@@ -70,5 +81,18 @@ final appRouter = GoRouter(
       name: ProfileScreen.name,
       builder: (context, state) => const ProfileScreen(),
     ),
+    GoRoute(
+  path: '/movie-details',
+  name: 'movie-details',
+  builder: (context, state) {
+    final movie = state.extra as Movie; // Recibimos la película
+    return MovieDetailsScreen(movie: movie);
+  },
+),
+GoRoute(
+  path: '/favorites',
+  name: FavoritesScreen.name,
+  builder: (context, state) => const FavoritesScreen(),
+),
   ],
 );

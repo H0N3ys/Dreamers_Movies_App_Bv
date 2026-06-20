@@ -1,13 +1,11 @@
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
 import 'package:dreamers_movies_app_bv/resources/styles/styles.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/custom_text_field.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/custom_filled_button.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/auth/login_screen.dart';
-import 'package:dreamers_movies_app_bv/domain/datasources/supabase_datasource.dart';
+import 'package:dreamers_movies_app_bv/domain/repositories/user_repositories.dart';
 
 class RegisterScreen extends StatefulWidget {
   static const name = 'register-screen';
@@ -25,8 +23,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
   
+  final UserRepository _userRepository = UserRepository();
   bool _isLoading = false;
-  
   final _formKey = GlobalKey<FormState>();
 
   Future<void> _handleRegister() async {
@@ -45,24 +43,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final response = await supabase.auth.signUp(
+     
+      final user = await _userRepository.register(
         email: _emailController.text.trim(),
         password: _passwordController.text,
-        data: {
-          'nombres': _nombresController.text.trim(),
-          'apellidos': _apellidosController.text.trim(),
-          'telefono': _telefonoController.text.trim(),
-        },
+        nombres: _nombresController.text.trim(),
+        apellidos: _apellidosController.text.trim(),
+        telefono: _telefonoController.text.trim(),
       );
 
-      if (response.user != null && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('¡Registro exitoso! Ahora inicia sesión'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+      if (user != null && mounted) {
+        // Mostrar éxito
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('¡Registro exitoso! Ahora inicia sesión'),
+                  backgroundColor: Colors.green,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
         
         _nombresController.clear();
         _apellidosController.clear();
@@ -73,10 +71,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         
         context.pushNamed(LoginScreen.name);
       }
-    } on AuthException catch (e) {
-      _showError(SupabaseHelper.getErrorMessage(e));
     } catch (e) {
-      _showError('Error al registrar: $e');
+      _showError(e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -210,11 +206,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   
                   const SizedBox(height: 16),
                   
+                  // Contraseña
                   CustomTextField(
                     label: 'Contraseña',
                     hintText: 'Mínimo 6 caracteres',
                     icon: Icons.lock_outline,
-                    obscureText: true, 
+                    obscureText: true,
                     controller: _passwordController,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -229,11 +226,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   
                   const SizedBox(height: 16),
                   
-                  CustomTextField(
-                    label: 'Confirmar Contraseña',
-                    hintText: 'Repite tu contraseña',
-                    icon: Icons.lock_outline,
-                    obscureText: true,  
+                      // Confirmar Contraseña
+                    CustomTextField(
+                      label: 'Confirmar Contraseña',
+                      hintText: 'Repite tu contraseña',
+                      icon: Icons.lock_outline,
+                      obscureText: true,
                     controller: _confirmPasswordController,
                     validator: (value) {
                       if (value == null || value.isEmpty) {

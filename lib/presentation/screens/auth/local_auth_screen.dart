@@ -45,45 +45,49 @@ class _LocalAuthScreenState extends State<LocalAuthScreen> {
     }
   }
 
-  Future<void> _autenticar() async {
-  if (!_isBiometricAvailable) {
-    setState(() {
-      _estado = 'Biometría no disponible en este dispositivo';
-    });
-    return;
-  }
-
-  try {
-    setState(() {
-      _estaAutenticando = true;
-      _estado = 'Autenticando...';
-    });
-
-    final autenticado = await _localAuth.authenticate(
-      localizedReason: 'Accede a tu cuenta de Cinexa con tu huella digital',
-    );
-
-    setState(() => _estaAutenticando = false);
-
-    if (autenticado && mounted) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('huella_enabled', true);
-      
-      if (mounted) {
-        context.go('/');
-      }
-    } else {
+Future<void> _autenticar() async {
+    if (!_isBiometricAvailable) {
       setState(() {
-        _estado = 'No se pudo verificar la huella';
+        _estado = 'Biometría no disponible en este dispositivo';
+      });
+      return;
+    }
+
+    try {
+      setState(() {
+        _estaAutenticando = true;
+        _estado = 'Autenticando...';
+      });
+
+      final autenticado = await _localAuth.authenticate(
+        localizedReason: 'Accede a tu cuenta de Cinexa con tu huella digital',
+      );
+
+      setState(() => _estaAutenticando = false);
+
+      if (autenticado && mounted) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('huella_enabled', true);
+        
+        // --- AQUÍ ESTÁ EL CAMBIO CLAVE ---
+        await prefs.setBool('session_unlocked', true); 
+        // ---------------------------------
+        
+        if (mounted) {
+          context.go('/');
+        }
+      } else {
+        setState(() {
+          _estado = 'No se pudo verificar la huella';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _estaAutenticando = false;
+        _estado = 'Error de biometría: ${e.toString().split('\n').first}';
       });
     }
-  } catch (e) {
-    setState(() {
-      _estaAutenticando = false;
-      _estado = 'Error de biometría: ${e.toString().split('\n').first}';
-    });
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -105,7 +109,6 @@ class _LocalAuthScreenState extends State<LocalAuthScreen> {
                 
                 const SizedBox(height: 24),
                 
-                // Título
                 Text(
                   'Acceso Seguro',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -127,7 +130,6 @@ class _LocalAuthScreenState extends State<LocalAuthScreen> {
                 
                 const SizedBox(height: 48),
                 
-                // Botón de autenticación
                 ElevatedButton(
                   onPressed: _estaAutenticando || !_isBiometricAvailable 
                       ? null 

@@ -6,10 +6,13 @@ class UserEntity {
   final String? apellidos;
   final String? telefono;
   final String? avatarUrl;
+  final String? idiomaPreferido;
+  final bool restriccionInfantil;
   final DateTime? createdAt;
   final DateTime? lastSignInAt;
   final bool isEmailConfirmed;
   final String? accessToken;
+  final int? nivelPermiso; // Para administrador
 
   const UserEntity({
     required this.id,
@@ -18,50 +21,45 @@ class UserEntity {
     this.apellidos,
     this.telefono,
     this.avatarUrl,
+    this.idiomaPreferido,
+    this.restriccionInfantil = false,
     this.createdAt,
     this.lastSignInAt,
     this.isEmailConfirmed = false,
     this.accessToken,
+    this.nivelPermiso,
   });
 
-  factory UserEntity.fromSupabaseData({
-    required String id,
-    required String email,
-    Map<String, dynamic>? userMetadata,
-    DateTime? createdAt,
-    DateTime? lastSignInAt,
-    DateTime? confirmedAt,
-    String? accessToken,
-  }) {
-    return UserEntity(
-      id: id,
-      email: email,
-      nombres: userMetadata?['nombres'] as String?,
-      apellidos: userMetadata?['apellidos'] as String?,
-      telefono: userMetadata?['telefono'] as String?,
-      createdAt: createdAt,
-      lastSignInAt: lastSignInAt,
-      isEmailConfirmed: confirmedAt != null,
-      accessToken: accessToken,
-    );
-  }
-
+  // Crear desde JSON (SQLite)
   factory UserEntity.fromJson(Map<String, dynamic> json) {
     return UserEntity(
-      id: json['id'] ?? json['user_id'] ?? '',
+      id: json['id_usuario'].toString(),
       email: json['email'] ?? '',
       nombres: json['nombres'] as String?,
       apellidos: json['apellidos'] as String?,
       telefono: json['telefono'] as String?,
-      avatarUrl: json['avatar_url'] as String?,
-      createdAt: json['created_at'] != null 
-          ? DateTime.tryParse(json['created_at']) 
+      createdAt: json['fecha_registro'] != null 
+          ? DateTime.tryParse(json['fecha_registro']) 
           : null,
-      lastSignInAt: json['last_sign_in_at'] != null 
-          ? DateTime.tryParse(json['last_sign_in_at']) 
+      isEmailConfirmed: true,
+    );
+  }
+
+  // Crear desde perfil (para datos completos)
+  factory UserEntity.fromPerfil(Map<String, dynamic> usuario, Map<String, dynamic> perfil) {
+    return UserEntity(
+      id: usuario['id_usuario'].toString(),
+      email: usuario['email'] ?? '',
+      nombres: perfil['nombre_perfil'] ?? usuario['nombres'],
+      apellidos: usuario['apellidos'] as String?,
+      telefono: usuario['telefono'] as String?,
+      avatarUrl: perfil['avatar_url'] as String?,
+      idiomaPreferido: perfil['idioma_preferido'] as String?,
+      restriccionInfantil: perfil['restriccion_infantil'] == 1,
+      createdAt: usuario['fecha_registro'] != null 
+          ? DateTime.tryParse(usuario['fecha_registro']) 
           : null,
-      isEmailConfirmed: json['confirmed_at'] != null,
-      accessToken: json['access_token'] as String?,
+      isEmailConfirmed: true,
     );
   }
 
@@ -73,10 +71,11 @@ class UserEntity {
       'apellidos': apellidos,
       'telefono': telefono,
       'avatar_url': avatarUrl,
+      'idioma_preferido': idiomaPreferido,
+      'restriccion_infantil': restriccionInfantil ? 1 : 0,
       'created_at': createdAt?.toIso8601String(),
-      'last_sign_in_at': lastSignInAt?.toIso8601String(),
       'is_email_confirmed': isEmailConfirmed,
-      'access_token': accessToken,
+      'nivel_permiso': nivelPermiso,
     };
   }
 
@@ -87,10 +86,13 @@ class UserEntity {
     String? apellidos,
     String? telefono,
     String? avatarUrl,
+    String? idiomaPreferido,
+    bool? restriccionInfantil,
     DateTime? createdAt,
     DateTime? lastSignInAt,
     bool? isEmailConfirmed,
     String? accessToken,
+    int? nivelPermiso,
   }) {
     return UserEntity(
       id: id ?? this.id,
@@ -99,14 +101,18 @@ class UserEntity {
       apellidos: apellidos ?? this.apellidos,
       telefono: telefono ?? this.telefono,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      idiomaPreferido: idiomaPreferido ?? this.idiomaPreferido,
+      restriccionInfantil: restriccionInfantil ?? this.restriccionInfantil,
       createdAt: createdAt ?? this.createdAt,
       lastSignInAt: lastSignInAt ?? this.lastSignInAt,
       isEmailConfirmed: isEmailConfirmed ?? this.isEmailConfirmed,
       accessToken: accessToken ?? this.accessToken,
+      nivelPermiso: nivelPermiso ?? this.nivelPermiso,
     );
   }
 
   String get fullName => '$nombres $apellidos'.trim();
   String get displayName => fullName.isNotEmpty ? fullName : email;
   bool get hasCompletedProfile => nombres != null && apellidos != null;
+  bool get isAdmin => nivelPermiso != null;
 }
