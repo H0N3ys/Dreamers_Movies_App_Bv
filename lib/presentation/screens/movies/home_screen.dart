@@ -31,13 +31,13 @@ class _HomeScreenState extends State<HomeScreen> {
   final LocalReviewsDatasource _reviewsDatasource = LocalReviewsDatasource();
   final DatabaseHelper _dbHelper = DatabaseHelper();
 
-  // Listas de estilo Netflix
+
   List<Movie> _nowPlayingMovies = [];
   List<Movie> _popularMoviesApi = [];
   List<Movie> _topRatedMovies = [];
   List<Movie> _upcomingMovies = []; // Nueva lista
   
-  // Para los filtros
+
   List<Movie> _allMoviesPool = []; 
   List<Movie> _filteredMovies = []; 
   
@@ -79,7 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _topRatedMovies = results[2] as List<Movie>;
         _upcomingMovies = results[3] as List<Movie>;
         
-        // Creamos un "pozo" con todas las películas juntas para que el filtro tenga de donde escoger
+       
         _allMoviesPool = [
           ..._nowPlayingMovies, 
           ..._popularMoviesApi, 
@@ -87,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ..._upcomingMovies
         ];
         
-        // Eliminamos duplicados por ID para que no salgan repetidas en el filtro
+        // Elimina duplicados por ID para que no salgan repetidas en el filtro
         final Map<int, Movie> uniqueMovies = {for (var m in _allMoviesPool) m.id: m};
         _allMoviesPool = uniqueMovies.values.toList();
         
@@ -123,21 +123,20 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // --- El Filtro Mágico ---
+
   void _filterByCategory(int index) {
     setState(() {
       _selectedCategoryIndex = index;
       if (index == 0) {
-        // Si elige "Todo", mostramos las populares
+      
         _filteredMovies = _popularMoviesApi;
       } else {
-        // Buscamos el ID del género seleccionado (Ej. Acción = 28)
+
         final int targetGenreId = _categories[index]['id'];
         
-        // Filtramos buscando en TODAS las películas descargadas
+   
         _filteredMovies = _allMoviesPool.where((movie) {
-          // Asumiendo que en tu entity se llama genreIds. 
-          // Si te marca error aquí, verifica el nombre exacto en movie_entities.dart
+       
           return movie.genreIds.contains(targetGenreId); 
         }).toList();
       }

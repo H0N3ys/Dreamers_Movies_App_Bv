@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -78,6 +80,25 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
   }
 
   Future<void> _loadTrailer() async {
+    // 1. Validar si estamos en Windows para no chocar el reproductor
+    bool isDesktop = false;
+    if (!kIsWeb) {
+      try {
+        isDesktop = Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+      } catch (e) {}
+    }
+
+    if (isDesktop) {
+      if (mounted) {
+        setState(() {
+          _hasTrailer = false;
+          _isLoadingTrailer = false;
+        });
+      }
+      return;
+    }
+
+    // 2. Cargar trailer en móvil
     final key = await _tmdbDatasource.getMovieTrailer(widget.movie.id);
     if (mounted) {
       if (key != null) {
@@ -148,12 +169,21 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
 
   Widget _buildMediaHeader() {
     if (_isLoadingTrailer) return const Center(child: CircularProgressIndicator(color: Colors.white));
-    if (_hasTrailer && _youtubeController != null) return SafeArea(bottom: false, child: YoutubePlayer(controller: _youtubeController!));
+    
+    if (_hasTrailer && _youtubeController != null) {
+      return YoutubePlayer(
+        controller: _youtubeController!,
+      );
+    }
     
     return Stack(
       fit: StackFit.expand,
       children: [
-        Image.network(widget.movie.backdropPath.isNotEmpty ? widget.movie.backdropPath : widget.movie.posterPath, fit: BoxFit.cover),
+        Image.network(
+          widget.movie.backdropPath.isNotEmpty ? widget.movie.backdropPath : widget.movie.posterPath, 
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.movie_outlined, color: Colors.white24, size: 50)),
+        ),
         Container(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Colors.black.withOpacity(0.8), Colors.black]))),
         const Center(child: Text('Trailer no disponible', style: TextStyle(color: Colors.white54, fontWeight: FontWeight.bold))),
       ],
@@ -164,78 +194,104 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black, 
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 250,
-            pinned: true,
-            backgroundColor: Colors.black,
-            leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: () => context.pop()),
-            // Ya quitamos la propiedad "actions" de aquí arriba para evitar duplicados
-            flexibleSpace: FlexibleSpaceBar(background: _buildMediaHeader()),
+      // 3. Envolvemos toda la pantalla en un Stack para poner el botón encima de todo
+      body: Stack(
+        children: [
+          CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 250,
+                pinned: true,
+                backgroundColor: Colors.black,
+                // Apagamos la flecha automática que se tapa con el video
+                automaticallyImplyLeading: false, 
+                flexibleSpace: FlexibleSpaceBar(background: _buildMediaHeader()),
+              ),
+              
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 16),
+                      
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              widget.movie.title, 
+                              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              _isFavorite ? Icons.favorite : Icons.favorite_border, 
+                              color: Colors.red, 
+                              size: 30
+                            ),
+                            onPressed: _toggleFavorite,
+                          ),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Text(widget.movie.releaseDate.year.toString(), style: const TextStyle(color: Colors.white54)),
+                          const SizedBox(width: 12),
+                          Container(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2), decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(4)), child: const Text('HD', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold))),
+                          const SizedBox(width: 12),
+                          const Icon(Icons.star, color: Colors.amber, size: 16),
+                          const SizedBox(width: 4),
+                          Text(widget.movie.voteAverage.toStringAsFixed(1), style: const TextStyle(color: Colors.white)),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: _hasTrailer ? () { if (_youtubeController!.value.playerState == PlayerState.playing) { _youtubeController!.pauseVideo(); } else { _youtubeController!.playVideo(); } } : null,
+                          icon: const Icon(Icons.play_arrow, color: Colors.black),
+                          label: Text(_hasTrailer ? 'Reproducir / Pausar' : 'No disponible', style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),
+                          style: ElevatedButton.styleFrom(backgroundColor: Colors.white, disabledBackgroundColor: Colors.grey.shade800, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: _showReviewModal, icon: const Icon(Icons.rate_review, color: Colors.white), label: const Text('Dejar una reseña', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)), style: ElevatedButton.styleFrom(backgroundColor: Colors.white24, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))))),
+                      const SizedBox(height: 24),
+                      const Text('Sinopsis', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      Text(widget.movie.overview.isEmpty ? 'No hay descripción disponible para esta película.' : widget.movie.overview, style: const TextStyle(color: Colors.white70, height: 1.5)),
+                      const SizedBox(height: 100), 
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
+
           
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 16),
-                  
-                  // --- NUEVO: Fila del Título y el Corazón de Favoritos ---
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          widget.movie.title, 
-                          style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(
-                          _isFavorite ? Icons.favorite : Icons.favorite_border, 
-                          color: Colors.red, 
-                          size: 30
-                        ),
-                        onPressed: _toggleFavorite,
-                      ),
-                    ],
-                  ),
-                  // --------------------------------------------------------
-                  
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Text(widget.movie.releaseDate.year.toString(), style: const TextStyle(color: Colors.white54)),
-                      const SizedBox(width: 12),
-                      Container(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2), decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(4)), child: const Text('HD', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold))),
-                      const SizedBox(width: 12),
-                      const Icon(Icons.star, color: Colors.amber, size: 16),
-                      const SizedBox(width: 4),
-                      Text(widget.movie.voteAverage.toStringAsFixed(1), style: const TextStyle(color: Colors.white)),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _hasTrailer ? () { if (_youtubeController!.value.playerState == PlayerState.playing) { _youtubeController!.pauseVideo(); } else { _youtubeController!.playVideo(); } } : null,
-                      icon: const Icon(Icons.play_arrow, color: Colors.black),
-                      label: Text(_hasTrailer ? 'Reproducir / Pausar' : 'No disponible', style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white, disabledBackgroundColor: Colors.grey.shade800, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: _showReviewModal, icon: const Icon(Icons.rate_review, color: Colors.white), label: const Text('Dejar una reseña', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)), style: ElevatedButton.styleFrom(backgroundColor: Colors.white24, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))))),
-                  const SizedBox(height: 24),
-                  const Text('Sinopsis', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  Text(widget.movie.overview.isEmpty ? 'No hay descripción disponible para esta película.' : widget.movie.overview, style: const TextStyle(color: Colors.white70, height: 1.5)),
-                  const SizedBox(height: 100), 
-                ],
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 10,
+            left: 14,
+            child: GestureDetector(
+              onTap: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/'); // Plan B por si acaso
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.5), // Fondo oscuro transparente
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
               ),
             ),
           ),

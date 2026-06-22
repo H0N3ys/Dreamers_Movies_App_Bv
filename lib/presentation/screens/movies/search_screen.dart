@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
 import 'package:dreamers_movies_app_bv/resources/styles/styles.dart';
-
+import 'dart:async';
 import 'package:dreamers_movies_app_bv/domain/entities/movie_entities.dart';
 import 'package:dreamers_movies_app_bv/domain/datasources/movie_datasources.dart';
 import 'package:dreamers_movies_app_bv/infrastructure/datasources/tmdb_datasource.dart';
 
-// Widgets reutlizados
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_category_filter.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_section_header.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/movie_card.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_bottom_nav.dart';
-
-
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/search_movie_result_card.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -24,6 +22,7 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
+  Timer? _debounce;
   final MovieDatasources _movieDatasource = TmdbDatasource();
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
@@ -38,11 +37,11 @@ class _SearchScreenState extends State<SearchScreen> {
   int _selectedCategoryIndex = 0;
   int _currentNavIndex = 1;
 
-  final List<String> _categories = [
-    'Todo',
-    'Comedia',
-    'Animación',
-    'Documentales',
+  final List<Map<String, dynamic>> _categories = [
+    {'name': 'Todo', 'id': 0},
+    {'name': 'Comedia', 'id': 35},
+    {'name': 'Animación', 'id': 16},
+    {'name': 'Documentales', 'id': 99},
   ];
 
   @override
@@ -54,6 +53,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchController.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -75,8 +75,22 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+  void _filterByCategory(int index) {
+    setState(() {
+      _selectedCategoryIndex = index;
+      if (index == 0) {
+        _recommendedMovies = _allMovies.take(10).toList();
+      } else {
+        final int targetGenreId = _categories[index]['id'] as int;
+        _recommendedMovies = _allMovies.where((movie) {
+          return movie.genreIds.contains(targetGenreId);
+        }).toList();
+      }
+    });
+  }
+
   void _onSearchChanged() {
-    final query = _searchController.text.trim().toLowerCase();
+    final query = _searchController.text.trim();
 
     if (query.isEmpty) {
       setState(() {
@@ -86,13 +100,23 @@ class _SearchScreenState extends State<SearchScreen> {
       return;
     }
 
-    final results = _allMovies
-        .where((m) => m.title.toLowerCase().contains(query))
-        .toList();
-
     setState(() {
       _isSearching = true;
-      _searchResults = results;
+    });
+
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+
+    _debounce = Timer(const Duration(milliseconds: 500), () async {
+      try {
+        final results = await _movieDatasource.searchMovies(query);
+        if (mounted) {
+          setState(() {
+            _searchResults = results;
+          });
+        }
+      } catch (e) {
+        debugPrint("Error buscando: $e");
+      }
     });
   }
 
@@ -113,18 +137,12 @@ class _SearchScreenState extends State<SearchScreen> {
       body: SafeArea(
         bottom: false,
         child: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(color: Colors.white))
+            ? const Center(child: CircularProgressIndicator(color: Colors.white))
             : Column(
                 children: [
                   const SizedBox(height: 16),
-
-                  // barra de busqueda
                   _buildSearchBar(),
-
                   const SizedBox(height: 16),
-
-                  // contenido
                   Expanded(
                     child: _isSearching
                         ? _buildSearchResults()
@@ -137,7 +155,6 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  
   Widget _buildSearchBar() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -162,12 +179,12 @@ class _SearchScreenState extends State<SearchScreen> {
                       controller: _searchController,
                       focusNode: _focusNode,
                       autofocus: true,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontFamily: AppTheme.secondaryFont,
                         color: Colors.white,
                         fontSize: 15,
                       ),
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         hintText: 'Buscar por categoría, nombre etc',
                         hintStyle: TextStyle(
                           fontFamily: AppTheme.secondaryFont,
@@ -193,13 +210,11 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
           ),
-
-          // "Cancelar" solo cuando está buscando
           if (_isSearching) ...[
             const SizedBox(width: 10),
             GestureDetector(
               onTap: _clearSearch,
-              child: Text(
+              child: const Text(
                 'Cancelar',
                 style: TextStyle(
                   fontFamily: AppTheme.secondaryFont,
@@ -215,27 +230,23 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  //categorias + featured + recomendadows
   Widget _buildEmptyState() {
+    final categoryNames = _categories.map((c) => c['name'] as String).toList();
+
     return CustomScrollView(
       physics: const BouncingScrollPhysics(),
       slivers: [
-        // Categorías
         SliverToBoxAdapter(
           child: HomeCategoryFilter(
-            categories: _categories,
+            categories: categoryNames,
             selectedIndex: _selectedCategoryIndex,
-            onCategorySelected: (i) =>
-                setState(() => _selectedCategoryIndex = i),
+            onCategorySelected: _filterByCategory,
           ),
         ),
-
         const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-        // Today — featured card horizontal grande
         if (_featuredMovie != null) ...[
-          SliverToBoxAdapter(
-            child: HomeSectionHeader(title: 'Today'),
+          const SliverToBoxAdapter(
+            child: HomeSectionHeader(title: 'Hoy en Cinexa'),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 12)),
           SliverToBoxAdapter(
@@ -244,18 +255,19 @@ class _SearchScreenState extends State<SearchScreen> {
               child: SearchMovieResultCard(
                 movie: _featuredMovie!,
                 badge: MovieBadgeType.premium,
+                onTap: () => context.pushNamed('movie-details', extra: _featuredMovie!),
               ),
             ),
           ),
         ],
-
         const SliverToBoxAdapter(child: SizedBox(height: 20)),
-
-        // Recommend for you
         SliverToBoxAdapter(
           child: HomeSectionHeader(
-            title: 'Recommend for you',
-            onSeeAll: () {},
+            title: 'Recomendado para ti',
+            onSeeAll: () {
+              _clearSearch();
+              _filterByCategory(0);
+            },
           ),
         ),
         const SliverToBoxAdapter(child: SizedBox(height: 14)),
@@ -267,31 +279,31 @@ class _SearchScreenState extends State<SearchScreen> {
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 20),
               itemCount: _recommendedMovies.length,
-              itemBuilder: (context, index) =>
-                  MovieCard(movie: _recommendedMovies[index]),
+              itemBuilder: (context, index) => MovieCard(
+                movie: _recommendedMovies[index],
+                onTap: () => context.pushNamed('movie-details', extra: _recommendedMovies[index]),
+              ),
             ),
           ),
         ),
-
         const SliverToBoxAdapter(child: SizedBox(height: 100)),
       ],
     );
   }
 
-  // ── Results State: lista vertical ──────────────────────────────────────
   Widget _buildSearchResults() {
     if (_searchResults.isEmpty) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.search_off_rounded,
+            const Icon(Icons.search_off_rounded,
                 color: Colors.white24, size: 56),
             const SizedBox(height: 16),
             Text(
               'Sin resultados para\n"${_searchController.text}"',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontFamily: AppTheme.secondaryFont,
                 color: Colors.white38,
                 fontSize: 15,
@@ -308,10 +320,13 @@ class _SearchScreenState extends State<SearchScreen> {
       itemCount: _searchResults.length,
       itemBuilder: (context, index) {
         final movie = _searchResults[index];
-        // Alternamos badge Premium / Free para variedad visual
         final badge =
             index % 3 == 1 ? MovieBadgeType.free : MovieBadgeType.premium;
-        return SearchMovieResultCard(movie: movie, badge: badge);
+        return SearchMovieResultCard(
+          movie: movie, 
+          badge: badge,
+          onTap: () => context.pushNamed('movie-details', extra: movie),
+        );
       },
     );
   }

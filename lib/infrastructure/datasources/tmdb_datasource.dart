@@ -76,4 +76,23 @@ Future<String?> getMovieTrailer(int movieId) async {
       throw Exception('Error al cargar próximos estrenos: $e');
     }
   }
-} // <-- Esta es la única llave que debe cerrar el archivo
+  @override
+  Future<List<Movie>> searchMovies(String query) async {
+    if (query.isEmpty) return [];
+    try {
+      final response = await dio.get('/search/movie', queryParameters: {
+        'query': query,
+        'page': 1,
+      });
+
+      final List<dynamic> data = response.data['results'];
+      // Filtramos las que no tienen poster para que no se vea feo
+      return data
+          .map((json) => Movie.fromJson(json))
+          .where((movie) => movie.posterPath.contains('http')) 
+          .toList();
+    } catch (e) {
+      throw Exception('Error al buscar películas: $e');
+    }
+  }
+} 

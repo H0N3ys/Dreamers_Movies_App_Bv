@@ -1,11 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dreamers_movies_app_bv/resources/styles/styles.dart';
+import 'package:dreamers_movies_app_bv/domain/repositories/user_repositories.dart';
 
-class HomeHeader extends StatelessWidget {
+class HomeHeader extends StatefulWidget {
   const HomeHeader({super.key});
+
+  @override
+  State<HomeHeader> createState() => _HomeHeaderState();
+}
+
+class _HomeHeaderState extends State<HomeHeader> {
+  String _nombreUsuario = 'Usuario'; // Valor por defecto
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarNombreUsuario();
+  }
+
+  Future<void> _cargarNombreUsuario() async {
+    final prefs = await SharedPreferences.getInstance();
+    // Recuperamos el nombre que guardaste en el LoginScreen
+    final nombre = prefs.getString('user_nombres');
+    
+    if (nombre != null && nombre.isNotEmpty) {
+      setState(() {
+        _nombreUsuario = nombre;
+      });
+    }
+  }
+
+  Future<void> _cerrarSesionLocal() async {
+    final userRepository = UserRepository();
+    await userRepository.logout(); // Limpia SharedPreferences
+    
+    if (mounted) {
+      context.goNamed('login-screen');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,12 +48,8 @@ class HomeHeader extends StatelessWidget {
       child: Row(
         children: [
           GestureDetector(
-            onLongPress: () async {
-              await Supabase.instance.client.auth.signOut();
-              if (context.mounted) {
-                context.goNamed('login-screen');
-              }
-            },
+            onTap: () => context.go('/profile'),
+            onLongPress: _cerrarSesionLocal,
             child: Container(
               width: 48,
               height: 48,
@@ -37,7 +67,7 @@ class HomeHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Hola, Pablo',
+                  'Hola, $_nombreUsuario', // <-- Aquí se muestra el nombre real
                   style: TextStyle(
                     fontFamily: AppTheme.secondaryFont,
                     fontWeight: FontWeight.bold,
@@ -57,7 +87,6 @@ class HomeHeader extends StatelessWidget {
               ],
             ),
           ),
-         
         ],
       ),
     );
