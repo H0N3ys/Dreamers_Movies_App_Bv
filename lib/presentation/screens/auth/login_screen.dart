@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_sign_in/google_sign_in.dart'; // <-- Nuevo import
 import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
 import 'package:dreamers_movies_app_bv/resources/styles/styles.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/auth/register_screen.dart';
@@ -100,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
         await prefs.setString('user_telefono', user.telefono ?? '');
         
         await prefs.setBool('is_logged_in', true);
-        await prefs.setBool('session_unlocked', true); // <-- Quitamos el candado
+        await prefs.setBool('session_unlocked', true);
         await prefs.setBool('first_login_completed', true);
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -124,6 +125,49 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  // --- NUEVA FUNCIÓN: Inicio de sesión con Google ---
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isLoading = true);
+    
+    try {
+      // Llamamos directo a la función que ya tienes en tu repositorio
+      final user = await _userRepository.loginWithGoogle();
+
+      // Si el usuario seleccionó una cuenta y todo salió bien...
+      if (user != null && mounted) {
+        final prefs = await SharedPreferences.getInstance();
+
+        // Guardamos los datos de la sesión localmente
+        await prefs.setString('user_id', user.id);
+        await prefs.setString('user_email', user.email);
+        await prefs.setString('user_nombres', user.nombres ?? '');
+        await prefs.setString('user_apellidos', user.apellidos ?? '');
+        await prefs.setString('user_telefono', user.telefono ?? '');
+        
+        await prefs.setBool('is_logged_in', true);
+        await prefs.setBool('session_unlocked', true);
+        await prefs.setBool('first_login_completed', true);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('¡Bienvenido ${user.nombres}!'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 1),
+          ),
+        );
+
+        // Lo mandamos a la pantalla principal
+        context.go('/'); 
+      }
+    } catch (e) {
+      print('Error Google Sign-In: $e');
+      _showError(e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -187,14 +231,12 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Logo (Más chico como pediste: 120 de altura)
                   Image.asset(
                     'assets/images/logoBueno.png',
                     height: 120,
                     fit: BoxFit.contain,
                   ),
                   
-                  // Título
                   RichText(
                     text: TextSpan(
                       style: Theme.of(context).textTheme.displayLarge?.copyWith(
@@ -216,7 +258,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   
                   const SizedBox(height: 8),
 
-                  // Subtítulo Dinámico
                   Text(
                     _hasAccountSaved 
                       ? 'Hola de nuevo, $_savedName 👋' 
@@ -231,7 +272,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   
                   const SizedBox(height: 48),
                   
-                  // Campo Email (Se oculta si ya tiene cuenta)
                   if (!_hasAccountSaved) ...[
                     CustomTextField(
                       label: 'Correo electrónico',
@@ -253,7 +293,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 20),
                   ],
                   
-                  // Campo Contraseña (Siempre visible)
                   CustomTextField(
                     label: 'Contraseña',
                     hintText: 'Ingresa tu contraseña',
@@ -276,7 +315,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   
                   const SizedBox(height: 12),
                   
-                  // Olvidé mi contraseña
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
@@ -298,7 +336,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   
                   const SizedBox(height: 32),
                   
-                  // Botón Iniciar Sesión
                   _isLoading 
                     ? const CircularProgressIndicator()
                     : CustomFilledButton(
@@ -306,7 +343,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: _handleLogin,
                       ),
                   
-                  // Botón extra por si quiere cambiar de usuario
                   if (_hasAccountSaved) ...[
                     const SizedBox(height: 16),
                     TextButton(
@@ -321,11 +357,37 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
 
-                  // Sección biométrica
                   if (_showBiometric) ..._buildBiometricSection(context),
 
-                  // Link a registro (Se oculta si ya tiene cuenta)
+                  // --- NUEVA SECCIÓN: Botón de Google y Registro ---
                   if (!_hasAccountSaved) ...[
+                    const SizedBox(height: 24),
+                    const DividerWithText(
+                      text: 'O INICIA SESIÓN CON',
+                      color: AppColors.secondaryColor,
+                    ),
+                    const SizedBox(height: 24),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 50),
+                        side: BorderSide(color: Colors.grey.shade300),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      icon: Image.network(
+                        'https://cdn.freebiesupply.com/logos/thumbs/2x/google-g-2015-logo.png',
+                        height: 24,
+                      ),
+                      label: Text(
+                        'Continuar con Google',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      onPressed: _isLoading ? null : _handleGoogleSignIn,
+                    ),
+                    
                     const SizedBox(height: 24),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,

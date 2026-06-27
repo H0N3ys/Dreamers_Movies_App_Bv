@@ -8,6 +8,24 @@ class MovieCard extends StatelessWidget {
 
   const MovieCard({super.key, required this.movie, this.onTap});
 
+  String _getPrimaryGenreName(List<int> genreIds) {
+    if (genreIds.isEmpty) return 'Sin género';
+    
+    final genres = {
+      28: "Acción", 12: "Aventura", 16: "Animación", 35: "Comedia",
+      80: "Crimen", 99: "Documental", 18: "Drama", 10751: "Familia",
+      14: "Fantasía", 36: "Historia", 27: "Terror", 10402: "Música",
+      9648: "Misterio", 10749: "Romance", 878: "Ciencia Ficción",
+      10770: "Película de TV", 53: "Suspense", 10752: "Bélica", 37: "Western"
+    };
+
+    final names = genreIds.map((id) => genres[id]).where((name) => name != null).cast<String>();
+    
+    // Para las tarjetas pequeñas, es mejor mostrar solo el PRIMER género 
+    // para que el texto no se salga de la pantalla.
+    return names.isEmpty ? 'Desconocido' : names.first; 
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -94,7 +112,7 @@ class MovieCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    'Action',
+                    _getPrimaryGenreName(movie.genreIds),
                     style: TextStyle(
                       fontFamily: AppTheme.secondaryFont,
                       color: Colors.white38,

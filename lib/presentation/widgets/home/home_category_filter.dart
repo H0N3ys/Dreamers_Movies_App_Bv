@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
 import 'package:dreamers_movies_app_bv/resources/styles/styles.dart';
 
 class HomeCategoryFilter extends StatelessWidget {

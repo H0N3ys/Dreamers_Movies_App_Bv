@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
 
@@ -51,10 +50,16 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Map<String, dynamic>> _categories = [
     {'name': 'Todo', 'id': 0},
     {'name': 'Acción', 'id': 28},
+    {'name': 'Aventura', 'id': 12},
     {'name': 'Comedia', 'id': 35},
     {'name': 'Ciencia Ficción', 'id': 878},
     {'name': 'Animación', 'id': 16},
     {'name': 'Terror', 'id': 27},
+    {'name': 'Drama', 'id': 18},
+    {'name': 'Fantasía', 'id': 14},
+    {'name': 'Romance', 'id': 10749},
+    {'name': 'Misterio', 'id': 9648},
+    {'name': 'Familia', 'id': 10751},
   ];
 
   @override
