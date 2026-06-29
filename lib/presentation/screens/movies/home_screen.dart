@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui'; 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -37,7 +38,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Movie> _allMoviesPool = []; 
   List<Movie> _filteredMovies = []; 
   
-  List<Map<String, dynamic>> _recentReviews = [];
+  List<Map<String, dynamic>> _recentReviews = []; 
+  List<Map<String, dynamic>> _dbReviews = []; 
 
   bool _isLoadingMovies = true;
   int _selectedCategoryIndex = 0;
@@ -64,6 +66,13 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadInitialData();
   }
 
+  // --- RECARGA AUTOMÁTICA AL VOLVER A LA PANTALLA ---
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadDBReviews();
+  }
+
   Future<void> _loadInitialData() async {
     try {
       final results = await Future.wait([
@@ -71,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _movieDatasource.getPopular(),
         _movieDatasource.getTopRated(),
         _movieDatasource.getUpcoming(), 
-        _loadRecentReviews(),
+        _loadStaticReviews(),
       ]);
 
       setState(() {
@@ -103,7 +112,48 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _loadRecentReviews() async {
+  Future<void> _loadStaticReviews() async {
+    await Future.delayed(const Duration(milliseconds: 400));
+    
+    if (!mounted) return;
+    
+    setState(() {
+      _recentReviews = [
+        {
+          'puntuacion': 5,
+          'comentario': 'Excelente película, el diseño de la interfaz visual en pantalla y la dirección me sorprendieron.',
+          'titulo': 'Deadpool & Wolverine',
+          'autor': 'Luis Antonio',
+        },
+        {
+          'puntuacion': 4,
+          'comentario': 'Muy buena historia. Me ayudó a relajarme después de una semana pesada de proyectos.',
+          'titulo': 'Intensamente 2',
+          'autor': 'María Ángela',
+        },
+        {
+          'puntuacion': 5,
+          'comentario': 'Visualmente increíble. Totalmente recomendada si te gusta la acción pura.',
+          'titulo': 'Dune: Parte Dos',
+          'autor': 'Julio',
+        },
+        {
+          'puntuacion': 5,
+          'comentario': 'Una obra maestra del suspenso. Te mantiene al borde del asiento todo el tiempo con su música.',
+          'titulo': 'Oppenheimer',
+          'autor': 'Janet',
+        },
+        {
+          'puntuacion': 4,
+          'comentario': 'Gran estilo único. El soundtrack es simplemente espectacular.',
+          'titulo': 'Spider-Man: Across the Spider-Verse',
+          'autor': 'Carlos',
+        }
+      ];
+    });
+  }
+
+  Future<void> _loadDBReviews() async {
     try {
       final db = await _dbHelper.database;
       final reviews = await db.rawQuery('''
@@ -113,11 +163,16 @@ class _HomeScreenState extends State<HomeScreen> {
         JOIN perfil pr ON r.id_perfil = pr.id_perfil
         JOIN usuario u ON pr.id_usuario = u.id_usuario
         ORDER BY r.fecha_creacion DESC
-        LIMIT 5
+        LIMIT 10
       ''');
-      setState(() => _recentReviews = reviews);
+      
+      if (mounted) {
+        setState(() {
+          _dbReviews = reviews;
+        });
+      }
     } catch (e) {
-      print('Error cargando reseñas: $e');
+      debugPrint('Error cargando reseñas de la BD: $e');
     }
   }
 
@@ -127,7 +182,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (index == 0) {
         _filteredMovies = _popularMoviesApi;
       } else {
-        final int targetGenreId = _categories[index]['id'];
+        final int targetGenreId = _categories[index]['id'] as int;
         _filteredMovies = _allMoviesPool.where((movie) {
           return movie.genreIds.contains(targetGenreId); 
         }).toList();
@@ -135,7 +190,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-Widget _buildAnimatedCarousel(List<Movie> movies) {
+  Widget _buildAnimatedCarousel(List<Movie> movies) {
     if (movies.isEmpty) return const SizedBox();
     return CarouselSlider.builder(
       itemCount: movies.length,
@@ -145,8 +200,8 @@ Widget _buildAnimatedCarousel(List<Movie> movies) {
         autoPlayInterval: const Duration(seconds: 4),
         autoPlayAnimationDuration: const Duration(milliseconds: 800),
         autoPlayCurve: Curves.fastOutSlowIn,
-        enlargeCenterPage: true,
-        viewportFraction: 0.85,
+        enlargeCenterPage: false, 
+        viewportFraction: 1.0,    
         enableInfiniteScroll: true,
       ),
       itemBuilder: (context, index, realIndex) {
@@ -162,32 +217,30 @@ Widget _buildAnimatedCarousel(List<Movie> movies) {
                 onTapDown: (_) => setState(() => isHovered = true),
                 onTapUp: (_) {
                   setState(() => isHovered = false);
-                  context.pushNamed('movie-details', extra: movie);
+                  // Truco extra: Recargamos también cuando regresamos de los detalles usando .then
+                  context.pushNamed('movie-details', extra: movie).then((_) => _loadDBReviews());
                 },
                 onTapCancel: () => setState(() => isHovered = false),
                 child: AnimatedScale(
-                  scale: isHovered ? 1.05 : 1.0, // Flota y crece un 5% (bien notable)
+                  scale: isHovered ? 1.02 : 1.0, 
                   duration: const Duration(milliseconds: 250),
-                  curve: Curves.easeOutBack, // Mini rebote elegante al crecer
+                  curve: Curves.easeOutBack, 
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    margin: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
+                    margin: EdgeInsets.zero, 
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isHovered ? Colors.white.withAlpha(150) : Colors.white.withAlpha(30),
-                        width: isHovered ? 2.0 : 1.0,
+                        color: isHovered ? Colors.white.withAlpha(150) : Colors.transparent,
+                        width: isHovered ? 2.0 : 0.0,
                       ),
                       boxShadow: isHovered
                           ? [
-                              // Sombra profunda proyectada hacia abajo al flotar
                               BoxShadow(
                                 color: Colors.black.withAlpha(200), 
                                 blurRadius: 20,
                                 spreadRadius: 2,
                                 offset: const Offset(0, 12), 
                               ),
-                              // Un brillo sutil alrededor para que resalte del fondo oscuro
                               BoxShadow(
                                 color: Colors.white.withAlpha(40),
                                 blurRadius: 15,
@@ -195,7 +248,6 @@ Widget _buildAnimatedCarousel(List<Movie> movies) {
                               )
                             ]
                           : [
-                              // Sombra normal pegada al fondo
                               BoxShadow(
                                 color: Colors.black.withAlpha(120),
                                 blurRadius: 8,
@@ -233,7 +285,6 @@ Widget _buildAnimatedCarousel(List<Movie> movies) {
     );
   }
 
-  // --- LÓGICA CORREGIDA PARA LAS FILAS INFINITAS ---
   Widget _buildMovieRow(List<Movie> movies, {int? activeGenreId}) {
     if (movies.isEmpty) {
       return const SizedBox(
@@ -265,12 +316,13 @@ Widget _buildAnimatedCarousel(List<Movie> movies) {
           itemCount: movies.length,
           itemBuilder: (context, index) {
             final movie = movies[index];
-            // Se quitó el GestureDetector externo para evitar conflicto
-            // y se pasó todo directamente a MovieCard
             return MovieCard(
               movie: movie,
               activeGenreId: activeGenreId,
-              onTap: () => context.pushNamed('movie-details', extra: movie),
+              onTap: () {
+                // Truco extra: Recargamos también cuando regresamos de los detalles usando .then
+                context.pushNamed('movie-details', extra: movie).then((_) => _loadDBReviews());
+              }
             );
           },
         ),
@@ -278,10 +330,132 @@ Widget _buildAnimatedCarousel(List<Movie> movies) {
     );
   }
 
+  Widget _buildStarRating(int rating) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(5, (index) {
+        return Icon(
+          index < rating ? Icons.star : Icons.star_border,
+          color: Colors.amber,
+          size: 16,
+        );
+      }),
+    );
+  }
+
+  Widget _buildReviewsCarousel(BuildContext context, List<Map<String, dynamic>> reviewsList) {
+    if (reviewsList.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 22),
+        child: Text('Aún no hay reseñas registradas.', style: TextStyle(color: Colors.white54)),
+      );
+    }
+    
+    final screenWidth = MediaQuery.of(context).size.width;
+    final double cardWidth = 320.0; 
+    final double viewportFraction = (cardWidth / screenWidth).clamp(0.1, 1.0);
+
+    return CarouselSlider.builder(
+      itemCount: reviewsList.length,
+      options: CarouselOptions(
+        height: 200.0,
+        autoPlay: true, 
+        autoPlayInterval: const Duration(seconds: 4), 
+        autoPlayAnimationDuration: const Duration(milliseconds: 800),
+        autoPlayCurve: Curves.fastOutSlowIn,
+        enlargeCenterPage: false, 
+        viewportFraction: viewportFraction, 
+        enableInfiniteScroll: true, 
+        padEnds: false, 
+      ),
+      itemBuilder: (context, index, realIndex) {
+        final review = reviewsList[index];
+        final String autor = review['autor'] ?? 'Usuario';
+        final int rating = (review['puntuacion'] as num?)?.toInt() ?? 0;
+        
+        return Container(
+          width: cardWidth,
+          margin: const EdgeInsets.only(left: 22), 
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white.withAlpha(15), 
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withAlpha(25)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 22,
+                    backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=${autor.replaceAll(' ', '')}'),
+                    backgroundColor: AppColors.accentColor,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          autor,
+                          style: const TextStyle(
+                            color: Colors.white, 
+                            fontWeight: FontWeight.bold, 
+                            fontSize: 15
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        _buildStarRating(rating), 
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: Text(
+                  review['comentario'] ?? '',
+                  style: const TextStyle(
+                    color: Colors.white70, 
+                    fontSize: 14, 
+                    height: 1.4 
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Icon(Icons.movie_creation_outlined, color: Colors.white54, size: 14),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      review['titulo'] ?? '',
+                      style: const TextStyle(
+                        color: Colors.white54, 
+                        fontSize: 12, 
+                        fontWeight: FontWeight.w600
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              )
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final List<String> categoryNames = _categories.map((c) => c['name'] as String).toList();
-    // Obtener el ID activo de la categoría para mandarlo a las tarjetas filtradas
     final int? currentGenreId = _selectedCategoryIndex == 0 ? null : _categories[_selectedCategoryIndex]['id'] as int;
 
     return Scaffold(
@@ -289,54 +463,83 @@ Widget _buildAnimatedCarousel(List<Movie> movies) {
       extendBody: true,
       body: _isLoadingMovies
           ? const Center(child: CircularProgressIndicator(color: Colors.white))
-          : SafeArea(
-              bottom: false,
-              child: CustomScrollView(
-                physics: const BouncingScrollPhysics(),
-                slivers: [
-                  const SliverToBoxAdapter(child: SizedBox(height: 20)),
-                  const SliverToBoxAdapter(child: HomeHeader()),
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-                  SliverToBoxAdapter(child: _buildAnimatedCarousel(_nowPlayingMovies.take(6).toList())),
-
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                  SliverToBoxAdapter(child: HomeSectionHeader(title: 'Explorar')),
-                  const SliverToBoxAdapter(child: SizedBox(height: 14)),
-                  SliverToBoxAdapter(
-                    child: HomeCategoryFilter(
-                      categories: categoryNames,
-                      selectedIndex: _selectedCategoryIndex,
-                      onCategorySelected: _filterByCategory,
+          : CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                SliverAppBar(
+                  pinned: true, 
+                  floating: false,
+                  elevation: 0,
+                  backgroundColor: AppColors.secondaryColor.withAlpha(200), 
+                  toolbarHeight: 70, 
+                  flexibleSpace: ClipRect(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0), 
+                      child: Container(
+                        color: Colors.transparent,
+                      ),
                     ),
                   ),
+                  title: const HomeHeader(),
+                  titleSpacing: 0, 
+                ),
 
-                  const SliverToBoxAdapter(child: SizedBox(height: 28)),
-                  SliverToBoxAdapter(
-                    child: HomeSectionHeader(
-                      title: _selectedCategoryIndex == 0 ? 'Tendencias actuales' : 'Resultados de tu filtro',
+                const SliverToBoxAdapter(child: SizedBox(height: 10)),
+                SliverToBoxAdapter(child: _buildAnimatedCarousel(_nowPlayingMovies.take(6).toList())),
+
+                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                const SliverToBoxAdapter(child: HomeSectionHeader(title: 'Explorar')),
+                const SliverToBoxAdapter(child: SizedBox(height: 14)),
+                SliverToBoxAdapter(
+                  child: HomeCategoryFilter(
+                    categories: categoryNames,
+                    selectedIndex: _selectedCategoryIndex,
+                    onCategorySelected: _filterByCategory,
+                  ),
+                ),
+
+                const SliverToBoxAdapter(child: SizedBox(height: 28)),
+                SliverToBoxAdapter(
+                  child: HomeSectionHeader(
+                    title: _selectedCategoryIndex == 0 ? 'Tendencias actuales' : 'Resultados de tu filtro',
+                  ),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 14)),
+                SliverToBoxAdapter(child: _buildMovieRow(_filteredMovies, activeGenreId: currentGenreId)),
+
+                const SliverToBoxAdapter(child: SizedBox(height: 28)),
+                const SliverToBoxAdapter(child: HomeSectionHeader(title: 'Próximos Estrenos')),
+                const SliverToBoxAdapter(child: SizedBox(height: 14)),
+                SliverToBoxAdapter(child: _buildMovieRow(_upcomingMovies)),
+
+                const SliverToBoxAdapter(child: SizedBox(height: 28)),
+                const SliverToBoxAdapter(child: HomeSectionHeader(title: 'Aclamadas por la crítica')),
+                const SliverToBoxAdapter(child: SizedBox(height: 14)),
+                SliverToBoxAdapter(child: _buildMovieRow(_topRatedMovies)),
+
+                const SliverToBoxAdapter(child: SizedBox(height: 36)),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 22),
+                    child: Text(
+                      'Actividad de la comunidad',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 14)),
-                  // --- SE MANDA EL ID AL FILTRO DE RESULTADOS ---
-                  SliverToBoxAdapter(child: _buildMovieRow(_filteredMovies, activeGenreId: currentGenreId)),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                SliverToBoxAdapter(child: _buildReviewsCarousel(context, _recentReviews)),
 
-                  const SliverToBoxAdapter(child: SizedBox(height: 28)),
-                  SliverToBoxAdapter(child: HomeSectionHeader(title: 'Próximos Estrenos')),
-                  const SliverToBoxAdapter(child: SizedBox(height: 14)),
-                  SliverToBoxAdapter(child: _buildMovieRow(_upcomingMovies)),
-
-                  const SliverToBoxAdapter(child: SizedBox(height: 28)),
-                  SliverToBoxAdapter(child: HomeSectionHeader(title: 'Aclamadas por la crítica')),
-                  const SliverToBoxAdapter(child: SizedBox(height: 14)),
-                  SliverToBoxAdapter(child: _buildMovieRow(_topRatedMovies)),
-
+                if (_dbReviews.isNotEmpty) ...[
                   const SliverToBoxAdapter(child: SizedBox(height: 36)),
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 22),
                       child: Text(
-                        'Actividad de la comunidad',
+                        'Reseñas Recientes (Locales)',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -345,66 +548,11 @@ Widget _buildAnimatedCarousel(List<Movie> movies) {
                     ),
                   ),
                   const SliverToBoxAdapter(child: SizedBox(height: 16)),
-                  
-                  if (_recentReviews.isEmpty)
-                    const SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 22),
-                        child: Text('Aún no hay reseñas. ¡Sé el primero!', style: TextStyle(color: Colors.white54)),
-                      ),
-                    )
-                  else
-                    SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final review = _recentReviews[index];
-                          return Container(
-                            margin: const EdgeInsets.only(left: 22, right: 22, bottom: 12),
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.05),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      review['autor'] ?? 'Usuario',
-                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                    ),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.star, color: Colors.amber, size: 16),
-                                        const SizedBox(width: 4),
-                                        Text('${review['puntuacion']}/5', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Reseñó: ${review['titulo']}',
-                                  style: const TextStyle(color: AppColors.accentColor, fontSize: 12, fontWeight: FontWeight.w600),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  review['comentario'] ?? '',
-                                  style: const TextStyle(color: Colors.white70, fontSize: 14),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                        childCount: _recentReviews.length,
-                      ),
-                    ),
-
-                  const SliverToBoxAdapter(child: SizedBox(height: 100)),
+                  SliverToBoxAdapter(child: _buildReviewsCarousel(context, _dbReviews)),
                 ],
-              ),
+
+                const SliverToBoxAdapter(child: SizedBox(height: 100)),
+              ],
             ),
       bottomNavigationBar: const HomeBottomNav(),
     );
