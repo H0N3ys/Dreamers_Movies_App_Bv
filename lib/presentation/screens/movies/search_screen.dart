@@ -89,9 +89,10 @@ class _SearchScreenState extends State<SearchScreen> {
     });
   }
 
-  void _onSearchChanged() {
+void _onSearchChanged() {
     final query = _searchController.text.trim();
 
+    // Ahora permite buscar desde 1 letra. Solo limpia si está completamente vacío.
     if (query.isEmpty) {
       setState(() {
         _isSearching = false;
@@ -111,7 +112,15 @@ class _SearchScreenState extends State<SearchScreen> {
         final results = await _movieDatasource.searchMovies(query);
         if (mounted) {
           setState(() {
-            _searchResults = results;
+            // FILTRO PROFESIONAL EXACTO:
+            // Obliga a que la secuencia exacta de letras exista en el título de la película.
+            _searchResults = results.where((movie) {
+              final titulo = movie.title.toLowerCase();
+              final busqueda = query.toLowerCase();
+              
+              // .contains() asegura que la unión de letras (ej. "ba") esté junta.
+              return titulo.contains(busqueda);
+            }).toList();
           });
         }
       } catch (e) {
