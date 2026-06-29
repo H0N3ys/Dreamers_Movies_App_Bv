@@ -11,7 +11,7 @@ import 'package:dreamers_movies_app_bv/domain/datasources/local_reviews_datasour
 import 'package:dreamers_movies_app_bv/domain/datasources/database_helper.dart';
 
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_header.dart';
-import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_search_bar.dart';
+// Eliminamos la importación del HomeSearchBar
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_category_filter.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_section_header.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/movie_card.dart';
@@ -30,12 +30,10 @@ class _HomeScreenState extends State<HomeScreen> {
   final LocalReviewsDatasource _reviewsDatasource = LocalReviewsDatasource();
   final DatabaseHelper _dbHelper = DatabaseHelper();
 
-
   List<Movie> _nowPlayingMovies = [];
   List<Movie> _popularMoviesApi = [];
   List<Movie> _topRatedMovies = [];
-  List<Movie> _upcomingMovies = []; // Nueva lista
-  
+  List<Movie> _upcomingMovies = []; 
 
   List<Movie> _allMoviesPool = []; 
   List<Movie> _filteredMovies = []; 
@@ -46,7 +44,6 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedCategoryIndex = 0;
   int _currentNavIndex = 0;
 
-  // Categorías con sus IDs oficiales de TMDB
   final List<Map<String, dynamic>> _categories = [
     {'name': 'Todo', 'id': 0},
     {'name': 'Acción', 'id': 28},
@@ -74,7 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _movieDatasource.getNowPlaying(),
         _movieDatasource.getPopular(),
         _movieDatasource.getTopRated(),
-        _movieDatasource.getUpcoming(), // Cargamos la nueva sección
+        _movieDatasource.getUpcoming(), 
         _loadRecentReviews(),
       ]);
 
@@ -84,7 +81,6 @@ class _HomeScreenState extends State<HomeScreen> {
         _topRatedMovies = results[2] as List<Movie>;
         _upcomingMovies = results[3] as List<Movie>;
         
-       
         _allMoviesPool = [
           ..._nowPlayingMovies, 
           ..._popularMoviesApi, 
@@ -92,11 +88,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ..._upcomingMovies
         ];
         
-        // Elimina duplicados por ID para que no salgan repetidas en el filtro
         final Map<int, Movie> uniqueMovies = {for (var m in _allMoviesPool) m.id: m};
         _allMoviesPool = uniqueMovies.values.toList();
         
-        // Al inicio, la sección filtrada muestra las populares
         _filteredMovies = _popularMoviesApi; 
         _isLoadingMovies = false;
       });
@@ -128,34 +122,26 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-
   void _filterByCategory(int index) {
     setState(() {
       _selectedCategoryIndex = index;
       if (index == 0) {
-      
         _filteredMovies = _popularMoviesApi;
       } else {
-
         final int targetGenreId = _categories[index]['id'];
-        
-   
         _filteredMovies = _allMoviesPool.where((movie) {
-       
           return movie.genreIds.contains(targetGenreId); 
         }).toList();
       }
     });
   }
 
- 
-
-  Widget _buildAnimatedCarousel(List<Movie> movies) {
+Widget _buildAnimatedCarousel(List<Movie> movies) {
     if (movies.isEmpty) return const SizedBox();
     return CarouselSlider.builder(
       itemCount: movies.length,
       options: CarouselOptions(
-        height: 220.0,
+        height: 300.0,
         autoPlay: true,
         autoPlayInterval: const Duration(seconds: 4),
         autoPlayAnimationDuration: const Duration(milliseconds: 800),
@@ -166,35 +152,69 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       itemBuilder: (context, index, realIndex) {
         final movie = movies[index];
-        return GestureDetector(
-          onTap: () => context.pushNamed('movie-details', extra: movie),
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 5.0),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              image: DecorationImage(
-                image: NetworkImage('https://image.tmdb.org/t/p/w500${movie.backdropPath}'),
-                fit: BoxFit.cover,
-                colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.3), BlendMode.darken),
-              ),
-            ),
-            child: Align(
-              alignment: Alignment.bottomLeft,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  movie.title,
-                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, shadows: [Shadow(color: Colors.black, blurRadius: 4)]),
+        bool isHovered = false; // Controla la sombra y el borde
+        
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return GestureDetector(
+              onTapDown: (_) => setState(() => isHovered = true),
+              onTapUp: (_) {
+                setState(() => isHovered = false);
+                context.pushNamed('movie-details', extra: movie);
+              },
+              onTapCancel: () => setState(() => isHovered = false),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                margin:  EdgeInsets.symmetric(horizontal: 5.0, vertical: isHovered ? 5.0 : 10.0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isHovered ? Colors.white.withOpacity(0.8) : Colors.white.withOpacity(0.2),
+                    width: isHovered ? 2.0 : 1.0,
+                  ),
+                  boxShadow: isHovered
+                      ? [
+                          BoxShadow(
+                            color: Colors.white.withOpacity(0.2), // Brillo al tocar
+                            blurRadius: 15,
+                            spreadRadius: 2,
+                          )
+                        ]
+                      : [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.6), // Sombra normal
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          )
+                        ],
+                  image: DecorationImage(
+                    image: NetworkImage('https://image.tmdb.org/t/p/w500${movie.backdropPath}'),
+                    fit: BoxFit.cover,
+                    colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.3), BlendMode.darken),
+                  ),
+                ),
+                child: Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Text(
+                      movie.title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        shadows: [Shadow(color: Colors.black, blurRadius: 4)]
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
+            );
+          }
         );
       },
     );
   }
-
-  // Helper para crear filas horizontales estilo Netflix
   Widget _buildMovieRow(List<Movie> movies) {
     if (movies.isEmpty) {
       return const SizedBox(
@@ -204,25 +224,41 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     return SizedBox(
       height: 230,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 22),
-        itemCount: movies.length,
-        itemBuilder: (context, index) {
-          final movie = movies[index];
-          return GestureDetector(
-            onTap: () => context.pushNamed('movie-details', extra: movie),
-            child: MovieCard(movie: movie),
-          );
+      // <-- ShaderMask para el difuminado en los bordes
+      child: ShaderMask(
+        shaderCallback: (Rect bounds) {
+          return const LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [
+              Colors.transparent, 
+              Colors.white, 
+              Colors.white, 
+              Colors.transparent
+            ],
+            stops: [0.0, 0.05, 0.95, 1.0], // Controla dónde empieza el difuminado
+          ).createShader(bounds);
         },
+        blendMode: BlendMode.dstIn,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 22),
+          itemCount: movies.length,
+          itemBuilder: (context, index) {
+            final movie = movies[index];
+            return GestureDetector(
+              onTap: () => context.pushNamed('movie-details', extra: movie),
+              child: MovieCard(movie: movie),
+            );
+          },
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Extraemos solo los nombres de la lista de mapas para el widget HomeCategoryFilter
     final List<String> categoryNames = _categories.map((c) => c['name'] as String).toList();
 
     return Scaffold(
@@ -236,15 +272,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 physics: const BouncingScrollPhysics(),
                 slivers: [
                   const SliverToBoxAdapter(child: SizedBox(height: 20)),
+                  // Header actualizado con diseño Figma
                   const SliverToBoxAdapter(child: HomeHeader()),
-                  const SliverToBoxAdapter(child: SizedBox(height: 20)),
-                  const SliverToBoxAdapter(child: HomeSearchBar()),
-                  const SliverToBoxAdapter(child: SizedBox(height: 20)),
+                  // Eliminamos el SizedBox y el HomeSearchBar de aquí
+                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
-                  // Carrusel Destacado (En Cartelera)
+                  // Carrusel Destacado más grande
                   SliverToBoxAdapter(child: _buildAnimatedCarousel(_nowPlayingMovies.take(6).toList())),
 
-                  // Filtro por Categorías
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
                   SliverToBoxAdapter(child: HomeSectionHeader(title: 'Explorar')),
                   const SliverToBoxAdapter(child: SizedBox(height: 14)),
@@ -256,7 +291,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
 
-                  // Fila 1: Resultados del Filtro o Populares
                   const SliverToBoxAdapter(child: SizedBox(height: 28)),
                   SliverToBoxAdapter(
                     child: HomeSectionHeader(
@@ -266,19 +300,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SliverToBoxAdapter(child: SizedBox(height: 14)),
                   SliverToBoxAdapter(child: _buildMovieRow(_filteredMovies)),
 
-                  // Fila 2: Próximos Estrenos
                   const SliverToBoxAdapter(child: SizedBox(height: 28)),
                   SliverToBoxAdapter(child: HomeSectionHeader(title: 'Próximos Estrenos')),
                   const SliverToBoxAdapter(child: SizedBox(height: 14)),
                   SliverToBoxAdapter(child: _buildMovieRow(_upcomingMovies)),
 
-                  // Fila 3: Aclamadas por la crítica
                   const SliverToBoxAdapter(child: SizedBox(height: 28)),
                   SliverToBoxAdapter(child: HomeSectionHeader(title: 'Aclamadas por la crítica')),
                   const SliverToBoxAdapter(child: SizedBox(height: 14)),
                   SliverToBoxAdapter(child: _buildMovieRow(_topRatedMovies)),
 
-                  // Sección: Reseñas de la Comunidad
                   const SliverToBoxAdapter(child: SizedBox(height: 36)),
                   SliverToBoxAdapter(
                     child: Padding(

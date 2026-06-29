@@ -1,91 +1,64 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
 import 'package:dreamers_movies_app_bv/resources/styles/styles.dart';
-import 'package:dreamers_movies_app_bv/domain/repositories/user_repositories.dart';
 
-class HomeHeader extends StatefulWidget {
+class HomeHeader extends StatelessWidget {
   const HomeHeader({super.key});
-
-  @override
-  State<HomeHeader> createState() => _HomeHeaderState();
-}
-
-class _HomeHeaderState extends State<HomeHeader> {
-  String _nombreUsuario = 'Usuario'; // Valor por defecto
-
-  @override
-  void initState() {
-    super.initState();
-    _cargarNombreUsuario();
-  }
-
-  Future<void> _cargarNombreUsuario() async {
-    final prefs = await SharedPreferences.getInstance();
-    // Recuperamos el nombre que guardaste en el LoginScreen
-    final nombre = prefs.getString('user_nombres');
-    
-    if (nombre != null && nombre.isNotEmpty) {
-      setState(() {
-        _nombreUsuario = nombre;
-      });
-    }
-  }
-
-  Future<void> _cerrarSesionLocal() async {
-    final userRepository = UserRepository();
-    await userRepository.logout(); // Limpia SharedPreferences
-    
-    if (mounted) {
-      context.goNamed('login-screen');
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          GestureDetector(
-            onTap: () => context.go('/profile'),
-            onLongPress: _cerrarSesionLocal,
-            child: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white24,
-                border: Border.all(color: Colors.white38, width: 1.5),
+          // Lado Izquierdo: Logo y texto (Estilo Figma)
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white24, 
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Image.asset(
+                  'assets/images/logoBueno.png',
+                  fit: BoxFit.cover,
+                ),
               ),
-              child: const Icon(Icons.person_outline, color: Colors.white70, size: 24),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Hola, $_nombreUsuario', // <-- Aquí se muestra el nombre real
-                  style: TextStyle(
-                    fontFamily: AppTheme.secondaryFont,
+              const SizedBox(width: 14),
+              RichText(
+                text: TextSpan(
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontFamily: AppTheme.primaryFont,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    fontSize: 18,
                   ),
+                  children: const [
+                    TextSpan(
+                      text: 'Ci',
+                      style: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
+                    ),
+                    TextSpan(
+                      text: 'nexa',
+                      style: TextStyle(color: Colors.white), 
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  'Veamos tu película favorita',
-                  style: TextStyle(
-                    fontFamily: AppTheme.secondaryFont,
-                    color: Colors.white60,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
+          ),
+          
+          // Lado Derecho: Ícono de Búsqueda
+          IconButton(
+            icon: const Icon(Icons.search_rounded, color: Colors.white, size: 28),
+            onPressed: () {
+              // Navegar a la pantalla de búsqueda
+              context.push('/search'); 
+            },
           ),
         ],
       ),
