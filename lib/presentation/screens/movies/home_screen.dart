@@ -11,7 +11,6 @@ import 'package:dreamers_movies_app_bv/domain/datasources/local_reviews_datasour
 import 'package:dreamers_movies_app_bv/domain/datasources/database_helper.dart';
 
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_header.dart';
-// Eliminamos la importación del HomeSearchBar
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_category_filter.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_section_header.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/movie_card.dart';
@@ -152,58 +151,76 @@ Widget _buildAnimatedCarousel(List<Movie> movies) {
       ),
       itemBuilder: (context, index, realIndex) {
         final movie = movies[index];
-        bool isHovered = false; // Controla la sombra y el borde
+        bool isHovered = false; 
         
         return StatefulBuilder(
           builder: (context, setState) {
-            return GestureDetector(
-              onTapDown: (_) => setState(() => isHovered = true),
-              onTapUp: (_) {
-                setState(() => isHovered = false);
-                context.pushNamed('movie-details', extra: movie);
-              },
-              onTapCancel: () => setState(() => isHovered = false),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                margin:  EdgeInsets.symmetric(horizontal: 5.0, vertical: isHovered ? 5.0 : 10.0),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isHovered ? Colors.white.withOpacity(0.8) : Colors.white.withOpacity(0.2),
-                    width: isHovered ? 2.0 : 1.0,
-                  ),
-                  boxShadow: isHovered
-                      ? [
-                          BoxShadow(
-                            color: Colors.white.withOpacity(0.2), // Brillo al tocar
-                            blurRadius: 15,
-                            spreadRadius: 2,
-                          )
-                        ]
-                      : [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.6), // Sombra normal
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          )
-                        ],
-                  image: DecorationImage(
-                    image: NetworkImage('https://image.tmdb.org/t/p/w500${movie.backdropPath}'),
-                    fit: BoxFit.cover,
-                    colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.3), BlendMode.darken),
-                  ),
-                ),
-                child: Align(
-                  alignment: Alignment.bottomLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Text(
-                      movie.title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        shadows: [Shadow(color: Colors.black, blurRadius: 4)]
+            return MouseRegion(
+              onEnter: (_) => setState(() => isHovered = true),
+              onExit: (_) => setState(() => isHovered = false),
+              child: GestureDetector(
+                onTapDown: (_) => setState(() => isHovered = true),
+                onTapUp: (_) {
+                  setState(() => isHovered = false);
+                  context.pushNamed('movie-details', extra: movie);
+                },
+                onTapCancel: () => setState(() => isHovered = false),
+                child: AnimatedScale(
+                  scale: isHovered ? 1.05 : 1.0, // Flota y crece un 5% (bien notable)
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOutBack, // Mini rebote elegante al crecer
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    margin: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isHovered ? Colors.white.withAlpha(150) : Colors.white.withAlpha(30),
+                        width: isHovered ? 2.0 : 1.0,
+                      ),
+                      boxShadow: isHovered
+                          ? [
+                              // Sombra profunda proyectada hacia abajo al flotar
+                              BoxShadow(
+                                color: Colors.black.withAlpha(200), 
+                                blurRadius: 20,
+                                spreadRadius: 2,
+                                offset: const Offset(0, 12), 
+                              ),
+                              // Un brillo sutil alrededor para que resalte del fondo oscuro
+                              BoxShadow(
+                                color: Colors.white.withAlpha(40),
+                                blurRadius: 15,
+                                spreadRadius: 1,
+                              )
+                            ]
+                          : [
+                              // Sombra normal pegada al fondo
+                              BoxShadow(
+                                color: Colors.black.withAlpha(120),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              )
+                            ],
+                      image: DecorationImage(
+                        image: NetworkImage('https://image.tmdb.org/t/p/w500${movie.backdropPath}'),
+                        fit: BoxFit.cover,
+                        colorFilter: ColorFilter.mode(Colors.black.withAlpha(77), BlendMode.darken),
+                      ),
+                    ),
+                    child: Align(
+                      alignment: Alignment.bottomLeft,
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Text(
+                          movie.title,
+                          style: const TextStyle(
+                            color: Color.fromARGB(255, 255, 255, 255),
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            shadows: [Shadow(color: Colors.black, blurRadius: 4)]
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -215,7 +232,9 @@ Widget _buildAnimatedCarousel(List<Movie> movies) {
       },
     );
   }
-  Widget _buildMovieRow(List<Movie> movies) {
+
+  // --- LÓGICA CORREGIDA PARA LAS FILAS INFINITAS ---
+  Widget _buildMovieRow(List<Movie> movies, {int? activeGenreId}) {
     if (movies.isEmpty) {
       return const SizedBox(
         height: 230, 
@@ -224,7 +243,6 @@ Widget _buildAnimatedCarousel(List<Movie> movies) {
     }
     return SizedBox(
       height: 230,
-      // <-- ShaderMask para el difuminado en los bordes
       child: ShaderMask(
         shaderCallback: (Rect bounds) {
           return const LinearGradient(
@@ -233,10 +251,10 @@ Widget _buildAnimatedCarousel(List<Movie> movies) {
             colors: [
               Colors.transparent, 
               Colors.white, 
-              Colors.white, 
+              Colors.black, 
               Colors.transparent
             ],
-            stops: [0.0, 0.05, 0.95, 1.0], // Controla dónde empieza el difuminado
+            stops: [0.02, 0.10, 0.90, 1.0], 
           ).createShader(bounds);
         },
         blendMode: BlendMode.dstIn,
@@ -247,9 +265,12 @@ Widget _buildAnimatedCarousel(List<Movie> movies) {
           itemCount: movies.length,
           itemBuilder: (context, index) {
             final movie = movies[index];
-            return GestureDetector(
+            // Se quitó el GestureDetector externo para evitar conflicto
+            // y se pasó todo directamente a MovieCard
+            return MovieCard(
+              movie: movie,
+              activeGenreId: activeGenreId,
               onTap: () => context.pushNamed('movie-details', extra: movie),
-              child: MovieCard(movie: movie),
             );
           },
         ),
@@ -260,6 +281,8 @@ Widget _buildAnimatedCarousel(List<Movie> movies) {
   @override
   Widget build(BuildContext context) {
     final List<String> categoryNames = _categories.map((c) => c['name'] as String).toList();
+    // Obtener el ID activo de la categoría para mandarlo a las tarjetas filtradas
+    final int? currentGenreId = _selectedCategoryIndex == 0 ? null : _categories[_selectedCategoryIndex]['id'] as int;
 
     return Scaffold(
       backgroundColor: AppColors.secondaryColor,
@@ -272,12 +295,9 @@ Widget _buildAnimatedCarousel(List<Movie> movies) {
                 physics: const BouncingScrollPhysics(),
                 slivers: [
                   const SliverToBoxAdapter(child: SizedBox(height: 20)),
-                  // Header actualizado con diseño Figma
                   const SliverToBoxAdapter(child: HomeHeader()),
-                  // Eliminamos el SizedBox y el HomeSearchBar de aquí
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
-                  // Carrusel Destacado más grande
                   SliverToBoxAdapter(child: _buildAnimatedCarousel(_nowPlayingMovies.take(6).toList())),
 
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
@@ -298,7 +318,8 @@ Widget _buildAnimatedCarousel(List<Movie> movies) {
                     ),
                   ),
                   const SliverToBoxAdapter(child: SizedBox(height: 14)),
-                  SliverToBoxAdapter(child: _buildMovieRow(_filteredMovies)),
+                  // --- SE MANDA EL ID AL FILTRO DE RESULTADOS ---
+                  SliverToBoxAdapter(child: _buildMovieRow(_filteredMovies, activeGenreId: currentGenreId)),
 
                   const SliverToBoxAdapter(child: SizedBox(height: 28)),
                   SliverToBoxAdapter(child: HomeSectionHeader(title: 'Próximos Estrenos')),
