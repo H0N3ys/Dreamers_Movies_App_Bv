@@ -22,7 +22,7 @@ class CustomTextField extends StatelessWidget {
   final String? prefixText;
   final List<TextInputFormatter>? inputFormatters; 
   
-  // NUEVO: Propiedad para inyectar el menú de banderas y LADA
+  
   final Widget? prefixWidget;
 
   const CustomTextField({
@@ -92,7 +92,7 @@ class CustomTextField extends StatelessWidget {
                 prefixStyle: theme.textTheme.bodyLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
-                // LÓGICA DE ICONO: Si le pasamos un prefixWidget (como el selector), lo usa. Si no, usa el icono normal.
+                
                 prefixIcon: prefixWidget ?? (icon != null ? Icon(icon, size: 22) : null),
                 suffixIcon: obscureText
                     ? GestureDetector(

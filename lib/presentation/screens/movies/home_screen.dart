@@ -34,7 +34,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Movie> _popularMoviesApi = [];
   List<Movie> _topRatedMovies = [];
   List<Movie> _upcomingMovies = []; 
-
+ List<Movie> _comedyMovies = [];
+  List<Movie> _horrorMovies = [];
   List<Movie> _allMoviesPool = []; 
   List<Movie> _filteredMovies = []; 
   
@@ -100,6 +101,8 @@ class _HomeScreenState extends State<HomeScreen> {
         _allMoviesPool = uniqueMovies.values.toList();
         
         _filteredMovies = _popularMoviesApi; 
+        _comedyMovies = _allMoviesPool.where((movie) => movie.genreIds.contains(35)).toList();
+        _horrorMovies = _allMoviesPool.where((movie) => movie.genreIds.contains(27)).toList();
         _isLoadingMovies = false;
       });
     } catch (e) {
@@ -320,7 +323,6 @@ class _HomeScreenState extends State<HomeScreen> {
               movie: movie,
               activeGenreId: activeGenreId,
               onTap: () {
-                // Truco extra: Recargamos también cuando regresamos de los detalles usando .then
                 context.pushNamed('movie-details', extra: movie).then((_) => _loadDBReviews());
               }
             );
@@ -516,6 +518,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SliverToBoxAdapter(child: HomeSectionHeader(title: 'Aclamadas por la crítica')),
                 const SliverToBoxAdapter(child: SizedBox(height: 14)),
                 SliverToBoxAdapter(child: _buildMovieRow(_topRatedMovies)),
+                const SliverToBoxAdapter(child: SizedBox(height: 28)),
+                const SliverToBoxAdapter(child: HomeSectionHeader(title: 'Comedia para reír sin parar')),
+                const SliverToBoxAdapter(child: SizedBox(height: 14)),
+                SliverToBoxAdapter(child: _buildMovieRow(_comedyMovies, activeGenreId: 35)),
+
+                
+                const SliverToBoxAdapter(child: SizedBox(height: 28)),
+                const SliverToBoxAdapter(child: HomeSectionHeader(title: 'Noches de Terror')),
+                const SliverToBoxAdapter(child: SizedBox(height: 14)),
+                SliverToBoxAdapter(child: _buildMovieRow(_horrorMovies, activeGenreId: 27)),
 
                 const SliverToBoxAdapter(child: SizedBox(height: 36)),
                 SliverToBoxAdapter(

@@ -1,7 +1,7 @@
 class Movie {
   final bool adult;
   final String backdropPath;
-  final List<int> genreIds; // <-- CAMBIADO A List<int>
+  final List<int> genreIds; 
   final int id;
   final String originalLanguage;
   final String originalTitle;
@@ -37,7 +37,7 @@ class Movie {
       backdropPath: json['backdrop_path'] != null
           ? 'https://image.tmdb.org/t/p/w500${json['backdrop_path']}'
           : '',
-      // 👇 CAMBIADO PARA LEER NÚMEROS DIRECTAMENTE 👇
+      
       genreIds: json['genre_ids'] != null
           ? List<int>.from(json['genre_ids'])
           : [],

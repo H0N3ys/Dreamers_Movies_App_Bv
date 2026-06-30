@@ -54,13 +54,13 @@ Future<String?> getMovieTrailer(int movieId) async {
     final response = await dio.get('/movie/$movieId/videos');
     final List<dynamic> results = response.data['results'];
 
-    // Buscamos el primer video que sea un Trailer de YouTube
+
     final trailer = results.firstWhere(
       (video) => video['site'] == 'YouTube' && video['type'] == 'Trailer',
       orElse: () => null,
     );
 
-    return trailer?['key']; // Retorna el ID del video de YouTube
+    return trailer?['key']; 
   } catch (e) {
     return null;
   }
@@ -86,7 +86,7 @@ Future<String?> getMovieTrailer(int movieId) async {
       });
 
       final List<dynamic> data = response.data['results'];
-      // Filtramos las que no tienen poster para que no se vea feo
+      
       return data
           .map((json) => Movie.fromJson(json))
           .where((movie) => movie.posterPath.contains('http')) 

@@ -10,7 +10,7 @@ class LocalReviewsDatasource {
     required int rating,
     required String comment,
   }) async {
-    // Llamamos directamente a la base local
+    
     await _db.saveReviewLocal(
       idPerfil: idPerfil,
       idPelicula: movie.id,

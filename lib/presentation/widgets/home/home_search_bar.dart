@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart'; // <-- Agrega esta importación
+import 'package:go_router/go_router.dart'; 
 import 'package:dreamers_movies_app_bv/resources/styles/styles.dart';
 
 class HomeSearchBar extends StatelessWidget {
@@ -9,7 +9,7 @@ class HomeSearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      // Envolvemos todo en un GestureDetector
+      
       child: GestureDetector(
         onTap: () => context.go('/search'), 
         child: Container(

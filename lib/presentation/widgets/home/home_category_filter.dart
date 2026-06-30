@@ -16,7 +16,7 @@ class HomeCategoryFilter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 48, // Aumentamos la altura de 38 a 48 para dar espacio a la animación
+      height: 48, 
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
@@ -24,7 +24,7 @@ class HomeCategoryFilter extends StatelessWidget {
         itemCount: categories.length,
         itemBuilder: (context, index) {
           final isSelected = selectedIndex == index;
-          bool isHovered = false; // Variable local para controlar cada botón
+          bool isHovered = false; 
 
           return StatefulBuilder(
             builder: (context, setState) {
@@ -39,7 +39,7 @@ class HomeCategoryFilter extends StatelessWidget {
                   },
                   onTapCancel: () => setState(() => isHovered = false),
                   child: AnimatedScale(
-                    scale: isHovered ? 1.05 : 1.0, // El botón crece un 5% al interactuar
+                    scale: isHovered ? 1.05 : 1.0, 
                     duration: const Duration(milliseconds: 150),
                     curve: Curves.easeOutCubic,
                     child: AnimatedContainer(
@@ -52,7 +52,7 @@ class HomeCategoryFilter extends StatelessWidget {
                             : Colors.white.withAlpha(13), 
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          // El borde brilla un poco más al pasar el dedo/mouse
+                          
                           color: isHovered 
                               ? Colors.white.withAlpha(128)
                               : isSelected
@@ -63,20 +63,20 @@ class HomeCategoryFilter extends StatelessWidget {
                         boxShadow: isHovered
                             ? [
                                 BoxShadow(
-                                  color: Colors.white.withAlpha(25), // Sombra/brillo suave
+                                  color: Colors.white.withAlpha(25), 
                                   blurRadius: 8,
                                   spreadRadius: 1,
                                   offset: const Offset(0, 2),
                                 )
                               ]
-                            : [], // Sin sombra cuando está en reposo
+                            : [], 
                       ),
                       child: Center(
                         child: Text(
                           categories[index],
                           style: TextStyle(
                             fontFamily: AppTheme.secondaryFont,
-                            // El texto se ilumina si está seleccionado o en hover
+                            
                             color: isSelected || isHovered ? Colors.white : Colors.white54,
                             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                             fontSize: 13,

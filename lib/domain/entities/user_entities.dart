@@ -12,7 +12,7 @@ class UserEntity {
   final DateTime? lastSignInAt;
   final bool isEmailConfirmed;
   final String? accessToken;
-  final int? nivelPermiso; // Para administrador
+  final int? nivelPermiso; 
 
   const UserEntity({
     required this.id,
@@ -30,7 +30,7 @@ class UserEntity {
     this.nivelPermiso,
   });
 
-  // Crear desde JSON (SQLite)
+  
   factory UserEntity.fromJson(Map<String, dynamic> json) {
     return UserEntity(
       id: json['id_usuario'].toString(),
@@ -45,7 +45,7 @@ class UserEntity {
     );
   }
 
-  // Crear desde perfil (para datos completos)
+  
   factory UserEntity.fromPerfil(Map<String, dynamic> usuario, Map<String, dynamic> perfil) {
     return UserEntity(
       id: usuario['id_usuario'].toString(),

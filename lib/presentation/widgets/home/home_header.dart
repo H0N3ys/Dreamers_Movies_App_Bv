@@ -13,7 +13,7 @@ class HomeHeader extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Lado Izquierdo: Logo y texto (Estilo Figma)
+          
           Row(
             children: [
               Container(
@@ -21,7 +21,7 @@ class HomeHeader extends StatelessWidget {
                 height: 48,
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white24, 
+                  color: Color.fromARGB(0, 255, 255, 255), 
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: Image.asset(
@@ -52,11 +52,11 @@ class HomeHeader extends StatelessWidget {
             ],
           ),
           
-          // Lado Derecho: Ícono de Búsqueda
+          
           IconButton(
             icon: const Icon(Icons.search_rounded, color: Colors.white, size: 28),
             onPressed: () {
-              // Navegar a la pantalla de búsqueda
+              
               context.push('/search'); 
             },
           ),

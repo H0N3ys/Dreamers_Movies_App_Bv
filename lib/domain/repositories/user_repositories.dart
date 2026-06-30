@@ -11,7 +11,7 @@ class UserRepository {
 
   Future<UserEntity?> loginWithGoogle() async {
     try {
-      // 1. Disparar el flujo nativo de selección de cuenta de Google
+      
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       
       if (googleUser == null) {
@@ -19,17 +19,17 @@ class UserRepository {
         return null; 
       }
 
-      // 2. Extraer datos básicos del usuario de Google
+      
       final String email = googleUser.email;
       final String googleId = googleUser.id;
       
-      // Separar el nombre completo en nombres y apellidos de manera simple
+      
       final displayName = googleUser.displayName ?? 'Usuario Google';
       final nameParts = displayName.split(' ');
       final String nombres = nameParts.isNotEmpty ? nameParts.first : displayName;
       final String apellidos = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
 
-      // 3. Mandar los datos recopilados a tu SQLite local
+      
       final localUser = await _dbHelper.authOrRegisterWithGoogle(
         email: email,
         googleId: googleId,
@@ -37,7 +37,7 @@ class UserRepository {
         apellidos: apellidos,
       );
 
-      // 👇 ESTE ES EL CAMBIO: Convertimos el Map a UserEntity antes de retornarlo
+      
       if (localUser == null) return null;
       return UserEntity.fromJson(localUser);
 
@@ -54,7 +54,7 @@ class UserRepository {
 
       if (!isLoggedIn) return null;
 
-      // Recuperamos los datos locales que guardaste en el LoginScreen
+      
       return UserEntity(
         id: prefs.getString('user_id') ?? '',
         email: prefs.getString('user_email') ?? '',
