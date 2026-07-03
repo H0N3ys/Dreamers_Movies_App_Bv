@@ -26,20 +26,22 @@ class ProfileListItem extends StatelessWidget {
         child: Row(
           children: [
             // El Avatar
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isAddButton ? Colors.black26 : Colors.white54,
-              ),
-              child: isAddButton 
+            CircleAvatar(
+              radius: 24,
+              backgroundColor: isAddButton
+                  ? Colors.black26
+                  : Colors.transparent,
+              child: isAddButton
                   ? const Icon(Icons.add, color: Colors.white54, size: 28)
-                  : null, // Aquí podrías poner un NetworkImage si tuvieras avatares
+                  : null,
+              backgroundImage: isAddButton
+                  ? null
+                  : NetworkImage(
+                      'https://i.pravatar.cc/150?u=${title.replaceAll(' ', '')}',
+                    ),
             ),
-            
             const SizedBox(width: 16),
-            
+
             // Los Textos
             Expanded(
               child: Column(
@@ -64,11 +66,11 @@ class ProfileListItem extends StatelessWidget {
                         fontSize: 13,
                       ),
                     ),
-                  ]
+                  ],
                 ],
               ),
             ),
-            
+
             // Etiqueta de "Seleccionado"
             if (isSelected)
               Text(

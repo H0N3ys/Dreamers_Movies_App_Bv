@@ -50,7 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // Comprobamos si el usuario ya tiene una cuenta guardada
+  
   Future<void> _loadSavedAccount() async {
     final prefs = await SharedPreferences.getInstance();
     final hasAccount = prefs.getBool('is_logged_in') ?? false;
@@ -59,15 +59,15 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {
         _hasAccountSaved = true;
         _savedName = prefs.getString('user_nombres') ?? 'Usuario';
-        // Llenamos el controlador de email invisible para que el backend pueda validar
+        
         _emailController.text = prefs.getString('user_email') ?? '';
-        // Activamos la huella si ya completó el primer login
+        
         _showBiometric = prefs.getBool('huella_enabled') ?? prefs.getBool('first_login_completed') ?? false;
       });
     }
   }
 
-  // Por si quiere usar otra cuenta
+  
   Future<void> _cambiarDeCuenta() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear(); // Borra la sesión local
@@ -128,19 +128,19 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // --- NUEVA FUNCIÓN: Inicio de sesión con Google ---
+  
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isLoading = true);
     
     try {
-      // Llamamos directo a la función que ya tienes en tu repositorio
+      
       final user = await _userRepository.loginWithGoogle();
 
-      // Si el usuario seleccionó una cuenta y todo salió bien...
+      
       if (user != null && mounted) {
         final prefs = await SharedPreferences.getInstance();
 
-        // Guardamos los datos de la sesión localmente
+        
         await prefs.setString('user_id', user.id);
         await prefs.setString('user_email', user.email);
         await prefs.setString('user_nombres', user.nombres ?? '');
@@ -160,7 +160,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         );
 
-        // Lo mandamos a la pantalla principal
+        
         context.go('/'); 
       }
     } catch (e) {
@@ -359,7 +359,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   if (_showBiometric) ..._buildBiometricSection(context),
 
-                  // --- NUEVA SECCIÓN: Botón de Google y Registro ---
+                  
                   if (!_hasAccountSaved) ...[
                     const SizedBox(height: 24),
                     const DividerWithText(

@@ -166,14 +166,14 @@ class SearchMovieResultCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.black45, // Aquí aplicamos el fondo oscuro
+                          color: Colors.black45, 
                           border: Border.all(color: Colors.white24, width: 1), // Borde gris sutil
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: const Text(
                           '+13', 
                           style: TextStyle(
-                            color: Colors.white70, // Texto más limpio
+                            color: Colors.white70, 
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),

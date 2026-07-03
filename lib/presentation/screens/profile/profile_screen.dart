@@ -40,22 +40,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // --- NUEVA FUNCIÓN: Lógica para cerrar sesión ---
+  
   Future<void> _executeLogout() async {
     try {
-      // 1. Limpiamos las preferencias guardadas en el Login
+      
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear(); // Esto borra el 'is_logged_in' y datos del usuario
 
-      // 2. Cerramos sesión en el backend (Supabase/Firebase)
+      
       await _userRepository.logout();
       
-      // 3. Navegamos de forma segura al Login
+      
       if (mounted) {
         context.go('/login'); // Asegúrate de que esta sea la ruta correcta en tu router
       }
     } catch (e) {
-      // 4. Si algo falla, se lo mostramos al usuario sin que crashee la app
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -67,7 +67,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // --- NUEVA FUNCIÓN: Cuadro de diálogo de confirmación ---
+  
   Future<void> _showLogoutConfirmation() async {
     final bool? confirm = await showDialog<bool>(
       context: context,
@@ -109,7 +109,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       },
     );
 
-    // Si el usuario presionó "Sí, salir" (confirm = true), ejecutamos el logout
+    
     if (confirm == true) {
       await _executeLogout();
     }
@@ -143,18 +143,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               
                 
-                // Botón de Agregar
+                
                 ProfileListItem(
                   title: 'Agregar perfil',
                   isAddButton: true,
                   onTap: () {
-                    // Acción para crear nuevo perfil
+                    
                   },
                 ),
                 
                 const Spacer(),
                 
-                // Botón de Cerrar Sesión actualizado
+                
                 Center(
                   child: TextButton.icon(
                     onPressed: _showLogoutConfirmation, // Llama a la alerta en lugar de cerrar directo

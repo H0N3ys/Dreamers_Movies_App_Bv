@@ -34,13 +34,14 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Movie> _nowPlayingMovies = [];
   List<Movie> _popularMoviesApi = [];
   List<Movie> _topRatedMovies = [];
-  List<Movie> _upcomingMovies = [];
-
-  List<Movie> _allMoviesPool = [];
-  List<Movie> _filteredMovies = [];
-
-  List<Map<String, dynamic>> _recentReviews = [];
-  List<Map<String, dynamic>> _dbReviews = [];
+  List<Movie> _upcomingMovies = []; 
+  List<Movie> _comedyMovies = [];
+  List<Movie> _horrorMovies = [];
+  List<Movie> _allMoviesPool = []; 
+  List<Movie> _filteredMovies = []; 
+  
+  List<Map<String, dynamic>> _recentReviews = []; 
+  List<Map<String, dynamic>> _dbReviews = []; 
 
   bool _isLoadingMovies = true;
   int _selectedCategoryIndex = 0;
@@ -146,8 +147,10 @@ class _HomeScreenState extends State<HomeScreen> {
         // Eliminar duplicados por ID
         final Map<int, Movie> uniqueMovies = {for (var m in _allMoviesPool) m.id: m};
         _allMoviesPool = uniqueMovies.values.toList();
-
-        _filteredMovies = _popularMoviesApi;
+        
+        _filteredMovies = _popularMoviesApi; 
+        _comedyMovies = _allMoviesPool.where((movie) => movie.genreIds.contains(35)).toList();
+        _horrorMovies = _allMoviesPool.where((movie) => movie.genreIds.contains(27)).toList();
         _isLoadingMovies = false;
       });
     } catch (e) {
@@ -559,6 +562,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SliverToBoxAdapter(child: HomeSectionHeader(title: 'Aclamadas por la crítica')),
                 const SliverToBoxAdapter(child: SizedBox(height: 14)),
                 SliverToBoxAdapter(child: _buildMovieRow(_topRatedMovies)),
+                
+                const SliverToBoxAdapter(child: SizedBox(height: 28)),
+                const SliverToBoxAdapter(child: HomeSectionHeader(title: 'Comedia para reír sin parar')),
+                const SliverToBoxAdapter(child: SizedBox(height: 14)),
+                SliverToBoxAdapter(child: _buildMovieRow(_comedyMovies, activeGenreId: 35)),
+
+                const SliverToBoxAdapter(child: SizedBox(height: 28)),
+                const SliverToBoxAdapter(child: HomeSectionHeader(title: 'Noches de Terror')),
+                const SliverToBoxAdapter(child: SizedBox(height: 14)),
+                SliverToBoxAdapter(child: _buildMovieRow(_horrorMovies, activeGenreId: 27)),
 
                 // Actividad de la comunidad (reseñas estáticas)
                 const SliverToBoxAdapter(child: SizedBox(height: 36)),

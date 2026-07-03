@@ -13,7 +13,7 @@ Future<void> main() async {
     print("⚠️ .env no cargado, usando valores por defecto");
   }
   
-  // --- NUEVO: Bloqueamos la sesión cada vez que se abre la app ---
+  
   final prefs = await SharedPreferences.getInstance();
   await prefs.setBool('session_unlocked', false); 
   

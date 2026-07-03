@@ -5,7 +5,7 @@ import 'package:dreamers_movies_app_bv/resources/styles/styles.dart';
 class MovieCard extends StatefulWidget {
   final Movie movie;
   final VoidCallback? onTap;
-  final int? activeGenreId; // <-- NUEVO: Recibe qué categoría estamos buscando
+  final int? activeGenreId; 
 
   const MovieCard({
     super.key, 
@@ -21,7 +21,7 @@ class MovieCard extends StatefulWidget {
 class _MovieCardState extends State<MovieCard> {
   bool _isHovered = false;
 
-  // --- LÓGICA CORREGIDA PARA MOSTRAR GÉNERO ---
+  
   String _getPrimaryGenreName(List<int> genreIds, int? activeGenreId) {
     if (genreIds.isEmpty) return 'Sin género';
     
@@ -33,12 +33,12 @@ class _MovieCardState extends State<MovieCard> {
       10770: "Película de TV", 53: "Suspense", 10752: "Bélica", 37: "Western"
     };
 
-    // Si hay un filtro seleccionado y la película lo tiene, MUESTRA ESE
+    
     if (activeGenreId != null && activeGenreId != 0 && genreIds.contains(activeGenreId)) {
       return genres[activeGenreId] ?? 'Desconocido';
     }
 
-    // Si no (ej. estamos en "Todo" o "Próximos Estrenos"), muestra el primero por defecto
+    
     final names = genreIds.map((id) => genres[id]).where((name) => name != null).cast<String>();
     return names.isEmpty ? 'Desconocido' : names.first; 
   }
@@ -52,7 +52,7 @@ class _MovieCardState extends State<MovieCard> {
         onTapDown: (_) => setState(() => _isHovered = true),
         onTapUp: (_) {
           setState(() => _isHovered = false);
-          // --- AQUÍ ASEGURAMOS QUE EL CLIC FUNCIONE ---
+          
           if (widget.onTap != null) widget.onTap!(); 
         },
         onTapCancel: () => setState(() => _isHovered = false),
@@ -156,7 +156,7 @@ class _MovieCardState extends State<MovieCard> {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        // Pasamos los géneros de la película y el filtro activo
+                        
                         _getPrimaryGenreName(widget.movie.genreIds, widget.activeGenreId),
                         style: TextStyle(
                           fontFamily: AppTheme.secondaryFont,

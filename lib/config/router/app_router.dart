@@ -24,25 +24,21 @@ redirect: (context, state) async {
     final isGoingToSplash = state.matchedLocation == '/splash';
     final isGoingToLocalAuth = state.matchedLocation == '/local-auth';
 
-    // 1. Si NO tiene cuenta, lo forzamos a ir al login (dejando pasar al splash y registro)
     if (!tieneCuenta && !isGoingToLogin && !isGoingToRegister && !isGoingToSplash) {
       return '/login';
     }
 
-    // 2. Si TIENE cuenta, pero la app apenas se abrió (el candado está puesto)
     if (tieneCuenta && !estaDesbloqueado) {
-      // Si intenta ir al Home, lo regresamos al login para que ponga huella o contraseña
       if (!isGoingToLogin && !isGoingToLocalAuth && !isGoingToSplash) {
         return '/login'; 
       }
     }
 
-    // 3. Si TIENE cuenta y YA QUITÓ EL CANDADO, va directo al Home (ya no le mostramos login)
     if (tieneCuenta && estaDesbloqueado && (isGoingToLogin || isGoingToRegister || isGoingToSplash || isGoingToLocalAuth)) {
       return '/';
     }
 
-    return null; // Si todo está en orden, lo deja pasar
+    return null; 
   },
 
   routes: [
@@ -85,7 +81,7 @@ redirect: (context, state) async {
   path: '/movie-details',
   name: 'movie-details',
   builder: (context, state) {
-    final movie = state.extra as Movie; // Recibimos la película
+    final movie = state.extra as Movie; 
     return MovieDetailsScreen(movie: movie);
   },
 ),
