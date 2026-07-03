@@ -40,6 +40,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   final _formKey = GlobalKey<FormState>();
 
+  // Expresión regular actualizada: cada palabra debe comenzar con mayúscula
   final RegExp _nameRegex = RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$');
   final RegExp _emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
   
@@ -109,18 +110,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _checkNameRules(String value) {
     setState(() {
       _isNameEmpty = value.isEmpty;
-      _nameStartsWithUpper = value.isNotEmpty && RegExp(r'^[A-ZÁÉÍÓÚÑ]').hasMatch(value);
+      // Cada palabra debe comenzar con mayúscula
+      final words = value.trim().split(' ');
+      bool allWordsStartWithUpper = words.every((word) => 
+        word.isNotEmpty && RegExp(r'^[A-ZÁÉÍÓÚÑ]').hasMatch(word)
+      );
+      _nameStartsWithUpper = value.isNotEmpty && allWordsStartWithUpper;
       _nameOnlyLetters = value.isNotEmpty && _nameRegex.hasMatch(value);
-      _nameCorrectCasing = value.isNotEmpty && RegExp(r'^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(\s[a-záéíóúñ]+)*$').hasMatch(value);
+      // Cada palabra debe tener el formato: Mayúscula + minúsculas
+      _nameCorrectCasing = value.isNotEmpty && 
+        words.every((word) => RegExp(r'^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+$').hasMatch(word));
     });
   }
 
   void _checkLastNameRules(String value) {
     setState(() {
       _isLastNameEmpty = value.isEmpty;
-      _lastNameStartsWithUpper = value.isNotEmpty && RegExp(r'^[A-ZÁÉÍÓÚÑ]').hasMatch(value);
+      // Cada palabra debe comenzar con mayúscula
+      final words = value.trim().split(' ');
+      bool allWordsStartWithUpper = words.every((word) => 
+        word.isNotEmpty && RegExp(r'^[A-ZÁÉÍÓÚÑ]').hasMatch(word)
+      );
+      _lastNameStartsWithUpper = value.isNotEmpty && allWordsStartWithUpper;
       _lastNameOnlyLetters = value.isNotEmpty && _nameRegex.hasMatch(value);
-      _lastNameCorrectCasing = value.isNotEmpty && RegExp(r'^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(\s[a-záéíóúñ]+)*$').hasMatch(value);
+      // Cada palabra debe tener el formato: Mayúscula + minúsculas
+      _lastNameCorrectCasing = value.isNotEmpty && 
+        words.every((word) => RegExp(r'^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+$').hasMatch(word));
     });
   }
 
@@ -334,7 +349,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   // --- SECCIÓN NOMBRES ---
                   CustomTextField(
                     label: 'Nombre(s)',
-                    hintText: 'Ej. Carlos adrian', 
+                    hintText: 'Ej. Carlos Adrian', 
                     icon: Icons.person_outline,
                     controller: _nombresController,
                     focusNode: _nombresFocus,
@@ -355,9 +370,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildDynamicRule('Iniciar con mayúscula', _nameStartsWithUpper, _isNameEmpty),
+                          _buildDynamicRule('Cada palabra inicia con mayúscula', _nameStartsWithUpper, _isNameEmpty),
                           _buildDynamicRule('Solo letras (sin números ni símbolos)', _nameOnlyLetters, _isNameEmpty),
-                          _buildDynamicRule('Coherencia (siguientes palabras en minúscula)', _nameCorrectCasing, _isNameEmpty),
+                          _buildDynamicRule('Coherencia (cada palabra en mayúscula inicial)', _nameCorrectCasing, _isNameEmpty),
                         ],
                       ),
                     ),
@@ -368,7 +383,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   // --- SECCIÓN APELLIDOS ---
                   CustomTextField(
                     label: 'Apellido(s)',
-                    hintText: 'Ej. Zamorano rodriguez',
+                    hintText: 'Ej. Zamorano Rodriguez',
                     icon: Icons.person_outline,
                     controller: _apellidosController,
                     focusNode: _apellidosFocus,
@@ -389,9 +404,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildDynamicRule('Iniciar con mayúscula', _lastNameStartsWithUpper, _isLastNameEmpty),
+                          _buildDynamicRule('Cada palabra inicia con mayúscula', _lastNameStartsWithUpper, _isLastNameEmpty),
                           _buildDynamicRule('Solo letras (sin números ni símbolos)', _lastNameOnlyLetters, _isLastNameEmpty),
-                          _buildDynamicRule('Coherencia (siguientes palabras en minúscula)', _lastNameCorrectCasing, _isLastNameEmpty),
+                          _buildDynamicRule('Coherencia (cada palabra en mayúscula inicial)', _lastNameCorrectCasing, _isLastNameEmpty),
                         ],
                       ),
                     ),
