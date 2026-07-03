@@ -16,9 +16,23 @@ class SearchMovieResultCard extends StatelessWidget {
     this.onTap,
   });
 
+  // Helper para convertir el ID del género en texto
+  String _getGenreName(List<int> genreIds) {
+    if (genreIds.isEmpty) return 'Movie';
+    final map = {
+      28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy',
+      80: 'Crime', 99: 'Documentary', 18: 'Drama', 10751: 'Family',
+      14: 'Fantasy', 36: 'History', 27: 'Horror', 10402: 'Music',
+      9648: 'Mystery', 10749: 'Romance', 878: 'Sci-Fi', 10770: 'TV Movie',
+      53: 'Thriller', 10752: 'War', 37: 'Western'
+    };
+    return map[genreIds.first] ?? 'Movie';
+  }
+
   @override
   Widget build(BuildContext context) {
     final isPremium = badge == MovieBadgeType.premium;
+    final mainGenre = _getGenreName(movie.genreIds); 
 
     return GestureDetector(
       onTap: onTap,
@@ -98,7 +112,7 @@ class SearchMovieResultCard extends StatelessWidget {
                     ),
                     child: Text(
                       isPremium ? 'Premium' : 'Free',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontFamily: AppTheme.secondaryFont,
                         color: Colors.white,
                         fontSize: 11,
@@ -109,12 +123,12 @@ class SearchMovieResultCard extends StatelessWidget {
 
                   const SizedBox(height: 8),
 
-                  // Titulo
+                  // Titulo dinámico
                   Text(
                     movie.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontFamily: AppTheme.secondaryFont,
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -125,7 +139,7 @@ class SearchMovieResultCard extends StatelessWidget {
 
                   const SizedBox(height: 10),
 
-                  // el año
+                  // El año dinámico
                   _MetaRow(
                     icon: Icons.calendar_today_outlined,
                     text: movie.releaseDate.year.toString(),
@@ -133,15 +147,15 @@ class SearchMovieResultCard extends StatelessWidget {
 
                   const SizedBox(height: 6),
 
-                  // Duracion y clasificación
+                  // Idioma original y Clasificación (En negro)
                   Row(
                     children: [
-                      const Icon(Icons.access_time_rounded,
+                      const Icon(Icons.language_rounded,
                           color: Colors.white38, size: 14),
                       const SizedBox(width: 6),
                       Text(
-                        '148 Minutes',
-                        style: TextStyle(
+                        movie.originalLanguage.toUpperCase(),
+                        style: const TextStyle(
                           fontFamily: AppTheme.secondaryFont,
                           color: Colors.white54,
                           fontSize: 12,
@@ -152,13 +166,14 @@ class SearchMovieResultCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          border: Border.all(color: Colors.blueAccent, width: 1),
+                          color: Colors.black45, // Aquí aplicamos el fondo oscuro
+                          border: Border.all(color: Colors.white24, width: 1), // Borde gris sutil
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: const Text(
-                          'PG-13',
+                          '+13', 
                           style: TextStyle(
-                            color: Colors.blueAccent,
+                            color: Colors.white70, // Texto más limpio
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
@@ -169,15 +184,15 @@ class SearchMovieResultCard extends StatelessWidget {
 
                   const SizedBox(height: 6),
 
-                  // Genre + type
+                  // Género dinámico + type
                   Row(
                     children: [
                       const Icon(Icons.grid_view_rounded,
                           color: Colors.white38, size: 14),
                       const SizedBox(width: 6),
                       Text(
-                        'Action',
-                        style: TextStyle(
+                        mainGenre,
+                        style: const TextStyle(
                           fontFamily: AppTheme.secondaryFont,
                           color: Colors.white54,
                           fontSize: 12,
@@ -187,7 +202,7 @@ class SearchMovieResultCard extends StatelessWidget {
                       Container(
                           width: 1, height: 12, color: Colors.white24),
                       const SizedBox(width: 10),
-                      Text(
+                      const Text(
                         'Movie',
                         style: TextStyle(
                           fontFamily: AppTheme.secondaryFont,
@@ -221,7 +236,7 @@ class _MetaRow extends StatelessWidget {
         const SizedBox(width: 6),
         Text(
           text,
-          style: TextStyle(
+          style: const TextStyle(
             fontFamily: AppTheme.secondaryFont,
             color: Colors.white54,
             fontSize: 12,

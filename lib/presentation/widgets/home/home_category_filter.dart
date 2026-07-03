@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
 import 'package:dreamers_movies_app_bv/resources/styles/styles.dart';
 
 class HomeCategoryFilter extends StatelessWidget {
@@ -17,7 +16,7 @@ class HomeCategoryFilter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 38,
+      height: 48, // Aumentamos la altura de 38 a 48 para dar espacio a la animación
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
@@ -25,35 +24,70 @@ class HomeCategoryFilter extends StatelessWidget {
         itemCount: categories.length,
         itemBuilder: (context, index) {
           final isSelected = selectedIndex == index;
-          return GestureDetector(
-            onTap: () => onCategorySelected(index),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              margin: const EdgeInsets.only(right: 10),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? Colors.white.withOpacity(0.12)
-                    : Colors.white.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isSelected
-                      ? Colors.white.withOpacity(0.4)
-                      : Colors.white.withOpacity(0.1),
-                  width: 1.2,
+          bool isHovered = false; // Variable local para controlar cada botón
+
+          return StatefulBuilder(
+            builder: (context, setState) {
+              return MouseRegion(
+                onEnter: (_) => setState(() => isHovered = true),
+                onExit: (_) => setState(() => isHovered = false),
+                child: GestureDetector(
+                  onTapDown: (_) => setState(() => isHovered = true),
+                  onTapUp: (_) {
+                    setState(() => isHovered = false);
+                    onCategorySelected(index);
+                  },
+                  onTapCancel: () => setState(() => isHovered = false),
+                  child: AnimatedScale(
+                    scale: isHovered ? 1.05 : 1.0, // El botón crece un 5% al interactuar
+                    duration: const Duration(milliseconds: 150),
+                    curve: Curves.easeOutCubic,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      margin: const EdgeInsets.only(right: 10, top: 4, bottom: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? Colors.white.withAlpha(31) 
+                            : Colors.white.withAlpha(13), 
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          // El borde brilla un poco más al pasar el dedo/mouse
+                          color: isHovered 
+                              ? Colors.white.withAlpha(128)
+                              : isSelected
+                                  ? Colors.white.withAlpha(102) 
+                                  : Colors.white.withAlpha(26), 
+                          width: 1.2,
+                        ),
+                        boxShadow: isHovered
+                            ? [
+                                BoxShadow(
+                                  color: Colors.white.withAlpha(25), // Sombra/brillo suave
+                                  blurRadius: 8,
+                                  spreadRadius: 1,
+                                  offset: const Offset(0, 2),
+                                )
+                              ]
+                            : [], // Sin sombra cuando está en reposo
+                      ),
+                      child: Center(
+                        child: Text(
+                          categories[index],
+                          style: TextStyle(
+                            fontFamily: AppTheme.secondaryFont,
+                            // El texto se ilumina si está seleccionado o en hover
+                            color: isSelected || isHovered ? Colors.white : Colors.white54,
+                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-              child: Text(
-                categories[index],
-                style: TextStyle(
-                  fontFamily: AppTheme.secondaryFont,
-                  color: isSelected ? Colors.white : Colors.white54,
-                  fontWeight:
-                      isSelected ? FontWeight.w600 : FontWeight.normal,
-                  fontSize: 13,
-                ),
-              ),
-            ),
+              );
+            }
           );
         },
       ),

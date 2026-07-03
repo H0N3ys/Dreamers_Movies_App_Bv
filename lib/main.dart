@@ -16,7 +16,6 @@ Future<void> main() async {
   // --- NUEVO: Bloqueamos la sesión cada vez que se abre la app ---
   final prefs = await SharedPreferences.getInstance();
   await prefs.setBool('session_unlocked', false); 
-  // ---------------------------------------------------------------
   
   runApp(const MyApp());
 }

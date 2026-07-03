@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class CustomTextField extends StatelessWidget {
   final String label;
-
   final IconData? icon;
   final bool obscureText;
   final TextInputType keyboardType;
@@ -19,6 +19,11 @@ class CustomTextField extends StatelessWidget {
   final int? maxLines;
   final int? minLines;
   final int? maxLength;
+  final String? prefixText;
+  final List<TextInputFormatter>? inputFormatters; 
+  
+  // NUEVO: Propiedad para inyectar el menú de banderas y LADA
+  final Widget? prefixWidget;
 
   const CustomTextField({
     super.key,
@@ -39,6 +44,9 @@ class CustomTextField extends StatelessWidget {
     this.maxLines = 1,
     this.minLines,
     this.maxLength,
+    this.prefixText,
+    this.inputFormatters, 
+    this.prefixWidget, 
   });
 
   @override
@@ -74,11 +82,18 @@ class CustomTextField extends StatelessWidget {
               maxLines: obscureText ? 1 : maxLines,
               minLines: minLines,
               maxLength: maxLength,
+              inputFormatters: inputFormatters, 
               style: theme.textTheme.bodyLarge,
               decoration: InputDecoration(
                 hintText: hintText,
                 errorText: errorText,
-                prefixIcon: icon != null ? Icon(icon, size: 22) : null,
+                counterText: '', 
+                prefixText: prefixText,
+                prefixStyle: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+                // LÓGICA DE ICONO: Si le pasamos un prefixWidget (como el selector), lo usa. Si no, usa el icono normal.
+                prefixIcon: prefixWidget ?? (icon != null ? Icon(icon, size: 22) : null),
                 suffixIcon: obscureText
                     ? GestureDetector(
                         onTap: () {

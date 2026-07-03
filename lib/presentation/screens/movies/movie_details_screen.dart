@@ -80,7 +80,6 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
   }
 
   Future<void> _loadTrailer() async {
-    // 1. Validar si estamos en Windows para no chocar el reproductor
     bool isDesktop = false;
     if (!kIsWeb) {
       try {
@@ -98,7 +97,6 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
       return;
     }
 
-    // 2. Cargar trailer en móvil
     final key = await _tmdbDatasource.getMovieTrailer(widget.movie.id);
     if (mounted) {
       if (key != null) {
@@ -130,6 +128,27 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
     }
+  }
+
+  // --- SOLUCIÓN PROBLEMA 2: Géneros Dinámicos ---
+  String _getGenreName() {
+    if (widget.movie.genreIds.isEmpty) return 'Sin género';
+    
+    final genres = {
+      28: "Acción", 12: "Aventura", 16: "Animación", 35: "Comedia",
+      80: "Crimen", 99: "Documental", 18: "Drama", 10751: "Familia",
+      14: "Fantasía", 36: "Historia", 27: "Terror", 10402: "Música",
+      9648: "Misterio", 10749: "Romance", 878: "Ciencia Ficción",
+      10770: "Película de TV", 53: "Suspense", 10752: "Bélica", 37: "Western"
+    };
+
+    // Esto mapea todos los IDs y los une con una coma
+    final names = widget.movie.genreIds
+        .map((id) => genres[id])
+        .where((name) => name != null)
+        .cast<String>();
+
+    return names.isEmpty ? 'Desconocido' : names.join(', ');
   }
 
   void _showReviewModal() {
@@ -194,108 +213,137 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black, 
-      // 3. Envolvemos toda la pantalla en un Stack para poner el botón encima de todo
-      body: Stack(
-        children: [
-          CustomScrollView(
-            slivers: [
-              SliverAppBar(
-                expandedHeight: 250,
-                pinned: true,
-                backgroundColor: Colors.black,
-                // Apagamos la flecha automática que se tapa con el video
-                automaticallyImplyLeading: false, 
-                flexibleSpace: FlexibleSpaceBar(background: _buildMediaHeader()),
-              ),
-              
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 16),
-                      
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              widget.movie.title, 
-                              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)
-                            ),
-                          ),
-                          IconButton(
-                            icon: Icon(
-                              _isFavorite ? Icons.favorite : Icons.favorite_border, 
-                              color: Colors.red, 
-                              size: 30
-                            ),
-                            onPressed: _toggleFavorite,
-                          ),
-                        ],
-                      ),
-                      
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Text(widget.movie.releaseDate.year.toString(), style: const TextStyle(color: Colors.white54)),
-                          const SizedBox(width: 12),
-                          Container(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2), decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(4)), child: const Text('HD', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold))),
-                          const SizedBox(width: 12),
-                          const Icon(Icons.star, color: Colors.amber, size: 16),
-                          const SizedBox(width: 4),
-                          Text(widget.movie.voteAverage.toStringAsFixed(1), style: const TextStyle(color: Colors.white)),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: _hasTrailer ? () { if (_youtubeController!.value.playerState == PlayerState.playing) { _youtubeController!.pauseVideo(); } else { _youtubeController!.playVideo(); } } : null,
-                          icon: const Icon(Icons.play_arrow, color: Colors.black),
-                          label: Text(_hasTrailer ? 'Reproducir / Pausar' : 'No disponible', style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.white, disabledBackgroundColor: Colors.grey.shade800, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: _showReviewModal, icon: const Icon(Icons.rate_review, color: Colors.white), label: const Text('Dejar una reseña', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)), style: ElevatedButton.styleFrom(backgroundColor: Colors.white24, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))))),
-                      const SizedBox(height: 24),
-                      const Text('Sinopsis', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 8),
-                      Text(widget.movie.overview.isEmpty ? 'No hay descripción disponible para esta película.' : widget.movie.overview, style: const TextStyle(color: Colors.white70, height: 1.5)),
-                      const SizedBox(height: 100), 
-                    ],
+      body: SafeArea(
+        bottom: false, 
+        child: CustomScrollView(
+          slivers: [
+            // 1. Barra de navegación superior fija y limpia (Ya no se expande, así el video no la tapa)
+            SliverAppBar(
+              pinned: true,
+              backgroundColor: Colors.black,
+              elevation: 0,
+              automaticallyImplyLeading: false, 
+              leading: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: GestureDetector(
+                  onTap: () {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go('/'); 
+                    }
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1), // Un fondo sutil para el botón
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
                   ),
                 ),
               ),
-            ],
-          ),
-
-          
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 10,
-            left: 14,
-            child: GestureDetector(
-              onTap: () {
-                if (context.canPop()) {
-                  context.pop();
-                } else {
-                  context.go('/'); // Plan B por si acaso
-                }
-              },
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5), // Fondo oscuro transparente
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+            ),
+            
+            // 2. El cuerpo de la pantalla
+            SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  
+                  // 👇 AQUÍ COLOCAMOS EL VIDEO (Más abajo, justo debajo de la AppBar)
+                  SizedBox(
+                    height: 230, // Altura fija ideal para el reproductor
+                    width: double.infinity,
+                    child: _buildMediaHeader(),
+                  ),
+                  
+                  // Todo el resto del contenido con su espaciado
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 20),
+                        
+                        // Fila del Título y Favorito
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                widget.movie.title, 
+                                style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(
+                                _isFavorite ? Icons.favorite : Icons.favorite_border, 
+                                color: Colors.red, 
+                                size: 30
+                              ),
+                              onPressed: _toggleFavorite,
+                            ),
+                          ],
+                        ),
+                        
+                        const SizedBox(height: 8),
+                        
+                        // Fila de metadatos (Año, Géneros, HD, Rating)
+                        Row(
+                          children: [
+                            Text(widget.movie.releaseDate.year.toString(), style: const TextStyle(color: Colors.white54)),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                _getGenreName(), 
+                                style: const TextStyle(color: Colors.white54),
+                                overflow: TextOverflow.ellipsis, // Por si son muchos géneros, no rompa la UI
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Container(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2), decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(4)), child: const Text('HD', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold))),
+                            const SizedBox(width: 12),
+                            const Icon(Icons.star, color: Colors.amber, size: 16),
+                            const SizedBox(width: 4),
+                            Text(widget.movie.voteAverage.toStringAsFixed(1), style: const TextStyle(color: Colors.white)),
+                          ],
+                        ),
+                        
+                        const SizedBox(height: 24),
+                        
+                        // Botón Reproducir / Pausar
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: _hasTrailer ? () { if (_youtubeController!.value.playerState == PlayerState.playing) { _youtubeController!.pauseVideo(); } else { _youtubeController!.playVideo(); } } : null,
+                            icon: const Icon(Icons.play_arrow, color: Colors.black),
+                            label: Text(_hasTrailer ? 'Reproducir / Pausar' : 'No disponible', style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.white, disabledBackgroundColor: Colors.grey.shade800, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))),
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 12),
+                        
+                        // Botón Reseña
+                        SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: _showReviewModal, icon: const Icon(Icons.rate_review, color: Colors.white), label: const Text('Dejar una reseña', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)), style: ElevatedButton.styleFrom(backgroundColor: Colors.white24, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))))),
+                        
+                        const SizedBox(height: 24),
+                        
+                        // Sinopsis
+                        const Text('Sinopsis', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        Text(widget.movie.overview.isEmpty ? 'No hay descripción disponible para esta película.' : widget.movie.overview, style: const TextStyle(color: Colors.white70, height: 1.5)),
+                        
+                        const SizedBox(height: 40), 
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -276,4 +276,63 @@ class DatabaseHelper {
     final directory = await getApplicationDocumentsDirectory();
     return join(directory.path, 'cinexa.db');
   }
+
+  // ============================================
+  // AUTENTICACIÓN / REGISTRO CON GOOGLE
+  // ============================================
+  Future<Map<String, dynamic>?> authOrRegisterWithGoogle({
+    required String email,
+    required String googleId,
+    required String nombres,
+    required String apellidos,
+  }) async {
+    final db = await database;
+
+    print('🌐 Procesando Google Sign-In para: $email');
+
+    try {
+      // 1. Verificar si el usuario ya existe por correo electrónico
+      final existing = await db.query(
+        'usuario',
+        where: 'email = ? AND es_activo = 1',
+        whereArgs: [email],
+      );
+
+      if (existing.isNotEmpty) {
+        print('✅ Usuario de Google ya registrado. Iniciando sesión...');
+        return existing.first;
+      }
+
+      // 2. Si no existe, lo creamos automáticamente usando su googleId como password_hash
+      print('🆕 El usuario no existe. Creando registro local con datos de Google...');
+      final userId = await db.insert('usuario', {
+        'email': email,
+        'password_hash': 'GOOGLE_$googleId', // Identificador para saber que vino de Google
+        'nombres': nombres,
+        'apellidos': apellidos,
+        'telefono': '',
+        'fecha_registro': DateTime.now().toIso8601String(),
+        'es_activo': 1,
+      });
+
+      // 3. Crear el perfil obligatorio por defecto
+      await db.insert('perfil', {
+        'id_usuario': userId,
+        'nombre_perfil': 'Principal',
+        'idioma_preferido': 'es',
+        'restriccion_infantil': 0,
+      });
+
+      final result = await db.query(
+        'usuario',
+        where: 'id_usuario = ?',
+        whereArgs: [userId],
+      );
+
+      return result.first;
+    } catch (e) {
+      print('❌ Error en authOrRegisterWithGoogle: $e');
+      rethrow;
+    }
+  }
 }
