@@ -121,18 +121,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _checkNameRules(String value) {
     setState(() {
       _isNameEmpty = value.isEmpty;
-<<<<<<< HEAD
-      // Cada palabra debe comenzar con mayúscula
-      final words = value.trim().split(' ');
-      bool allWordsStartWithUpper = words.every((word) => 
-        word.isNotEmpty && RegExp(r'^[A-ZÁÉÍÓÚÑ]').hasMatch(word)
-      );
-      _nameStartsWithUpper = value.isNotEmpty && allWordsStartWithUpper;
-      _nameOnlyLetters = value.isNotEmpty && _nameRegex.hasMatch(value);
-      // Cada palabra debe tener el formato: Mayúscula + minúsculas
-      _nameCorrectCasing = value.isNotEmpty && 
-        words.every((word) => RegExp(r'^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+$').hasMatch(word));
-=======
+
       _nameStartsWithUpper =
           value.isNotEmpty && RegExp(r'^[A-ZÁÉÍÓÚÑ]').hasMatch(value);
       _nameOnlyLetters = value.isNotEmpty && _nameRegex.hasMatch(value);
@@ -142,25 +131,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
           RegExp(
             r'^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(\s[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)*$',
           ).hasMatch(value);
->>>>>>> origin/RamaSegovia
+
     });
   }
 
   void _checkLastNameRules(String value) {
     setState(() {
       _isLastNameEmpty = value.isEmpty;
-<<<<<<< HEAD
-      // Cada palabra debe comenzar con mayúscula
-      final words = value.trim().split(' ');
-      bool allWordsStartWithUpper = words.every((word) => 
-        word.isNotEmpty && RegExp(r'^[A-ZÁÉÍÓÚÑ]').hasMatch(word)
-      );
-      _lastNameStartsWithUpper = value.isNotEmpty && allWordsStartWithUpper;
-      _lastNameOnlyLetters = value.isNotEmpty && _nameRegex.hasMatch(value);
-      // Cada palabra debe tener el formato: Mayúscula + minúsculas
-      _lastNameCorrectCasing = value.isNotEmpty && 
-        words.every((word) => RegExp(r'^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+$').hasMatch(word));
-=======
+
+
       _lastNameStartsWithUpper =
           value.isNotEmpty && RegExp(r'^[A-ZÁÉÍÓÚÑ]').hasMatch(value);
       _lastNameOnlyLetters = value.isNotEmpty && _nameRegex.hasMatch(value);
@@ -170,7 +149,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           RegExp(
             r'^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(\s[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)*$',
           ).hasMatch(value);
->>>>>>> origin/RamaSegovia
+
     });
   }
 
