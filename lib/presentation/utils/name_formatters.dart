@@ -105,20 +105,3 @@ class NameBlockFormatter extends TextInputFormatter {
   }
 }
 
-class EmailInputFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    // Permitir solo caracteres válidos para email
-    final RegExp validChars = RegExp(r'^[a-zA-Z0-9._%+-@]*$');
-    
-    if (validChars.hasMatch(newValue.text)) {
-      return newValue;
-    }
-    
-    // Si el carácter no es válido, retornar el valor anterior
-    return oldValue;
-  }
-}
