@@ -16,7 +16,8 @@ class HomeBottomNav extends StatelessWidget {
     if (location == '/') currentIndex = 0;
     else if (location.startsWith('/search')) currentIndex = 1;
     else if (location.startsWith('/favorites')) currentIndex = 2; // Favoritos
-    else if (location.startsWith('/profile')) currentIndex = 3;
+    else if (location.startsWith('/saved')) currentIndex = 3; // Guardados
+    else if (location.startsWith('/profile')) currentIndex = 4; // Perfil
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
@@ -56,9 +57,16 @@ class HomeBottomNav extends StatelessWidget {
               onTap: (_) => context.go('/favorites'), 
             ),
             _NavItem(
+              icon: Icons.bookmark_rounded, // Icono de guardados
+              label: 'Guardados',
+              index: 3,
+              currentIndex: currentIndex,
+              onTap: (_) => context.go('/saved'), 
+            ),
+            _NavItem(
               icon: Icons.person_outline_rounded,
               label: 'Perfil',
-              index: 3,
+              index: 4,
               currentIndex: currentIndex,
               onTap: (_) => context.go('/profile'), 
             ),

@@ -10,6 +10,7 @@ import 'package:dreamers_movies_app_bv/presentation/screens/movies/home_screen.d
 import 'package:dreamers_movies_app_bv/presentation/screens/movies/search_screen.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/profile/profile_screen.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/movies/movie_details_screen.dart';
+import 'package:dreamers_movies_app_bv/presentation/screens/movies/saved_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/splash',
@@ -77,6 +78,10 @@ redirect: (context, state) async {
       name: ProfileScreen.name,
       builder: (context, state) => const ProfileScreen(),
     ),
+
+    // En tu app_router.dart, agrega esta ruta:
+
+
     GoRoute(
   path: '/movie-details',
   name: 'movie-details',
@@ -89,6 +94,12 @@ GoRoute(
   path: '/favorites',
   name: FavoritesScreen.name,
   builder: (context, state) => const FavoritesScreen(),
+),
+
+GoRoute(
+  path: '/saved',
+  name: SavedScreen.name,
+  builder: (context, state) => const SavedScreen(),
 ),
   ],
 );
