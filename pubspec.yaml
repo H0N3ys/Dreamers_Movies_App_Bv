@@ -57,10 +57,11 @@ dependencies:
   # 👇 Google Sign In debe ir aquí, en las dependencias principales
   google_sign_in: ^6.2.1
   country_code_picker: ^3.4.1
-
+  like_button: ^2.0.5
 dev_dependencies:
   flutter_test:
     sdk: flutter
+    
   flutter_launcher_icons: ^0.13.1
   flutter_lints: ^6.0.0
 
