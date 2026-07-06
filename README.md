@@ -1,21 +1,17 @@
-<<<<<<< HEAD
-# dreamers_movies_app_bv
+# Dreamers_Movies_App_Bv
 
-A new Flutter project.
+Aplicación móvil de películas hecha con Flutter.
 
-## Getting Started
+## Configuración Inicial 🚀
 
-This project is a starting point for a Flutter application.
+Para que el proyecto funcione correctamente en tu entorno local, sigue estos pasos:
 
-A few resources to get you started if this is your first Flutter project:
+1. Copia el archivo `.env.template` y renombralo a `.env`
+2. Cambia las variables de entorno con tus credenciales (The MovieDB / Supabase)
+
+## Comenzando con Flutter 🛠️
+
+Este proyecto es el punto de partida para nuestra aplicación. Si necesitas ayuda con la documentación oficial de Flutter, puedes revisar estos recursos:
 
 - [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
 - [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-=======
-# Dreamers_Movies_App_Bv
-Aplicación movil de peliculas hecho con Flutter 
->>>>>>> aa84e9b3631254910cb37960bdb6d6797c23681f

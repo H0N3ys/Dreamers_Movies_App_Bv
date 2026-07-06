@@ -30,12 +30,23 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  
+  supabase_flutter: ^2.12.0
+
+  flutter_dotenv: ^5.1.0
+  
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   go_router: ^17.2.3
 
   cupertino_icons: ^1.0.8
+  video_player: ^2.11.1
+  local_auth: ^3.0.1
+  shared_preferences: ^2.5.5
+  dio: ^5.9.2
+
+  
 
 dev_dependencies:
   flutter_test:
@@ -58,12 +69,31 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  # para darle permiso a la carpeta:
+  assets:
+    - assets/images/
+    #- assets/icons/
+    - assets/videos/
+    - .env
 
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 
+  fonts:
+
+    - family: Output
+      fonts:
+        - asset: assets/fonts/Output-Regular.ttf
+        - asset: assets/fonts/Output-Bold.ttf
+          weight: 700
+
+    - family: WorkSans
+      fonts:
+        - asset: assets/fonts/WorkSans-Regular.ttf
+        - asset: assets/fonts/WorkSans-Medium.ttf
+          weight: 500
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 
@@ -89,3 +119,5 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+  
