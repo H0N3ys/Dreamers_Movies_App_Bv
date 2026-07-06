@@ -9,6 +9,9 @@ import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
 import 'package:dreamers_movies_app_bv/domain/entities/movie_entities.dart';
 import 'package:dreamers_movies_app_bv/infrastructure/datasources/tmdb_datasource.dart';
 import 'package:dreamers_movies_app_bv/domain/datasources/local_reviews_datasource.dart';
+// 🔥 IMPORTS DE LOS NUEVOS WIDGETS
+import 'package:dreamers_movies_app_bv/presentation/widgets/shared/save_animation_widget.dart';
+import 'package:dreamers_movies_app_bv/presentation/widgets/shared/save_confirmation_overlay.dart';
 
 class MovieDetailsScreen extends StatefulWidget {
   final Movie movie;
@@ -26,17 +29,19 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
   bool _isLoadingTrailer = true;
   bool _hasTrailer = false;
   bool _isFavorite = false;
+  bool _isSaved = false;
 
   @override
   void initState() {
     super.initState();
     _loadTrailer();
     _checkIfFavorite();
+    _checkIfSaved();
   }
 
   @override
   void dispose() {
-    _youtubeController?.close(); 
+    _youtubeController?.close();
     super.dispose();
   }
 
@@ -77,6 +82,89 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
         ),
       );
     }
+  }
+
+  Future<void> _checkIfSaved() async {
+    final prefs = await SharedPreferences.getInstance();
+    final List<String> savedJson = prefs.getStringList('saved_list') ?? [];
+    
+    final bool exists = savedJson.any((str) {
+      final data = jsonDecode(str);
+      return data['id'] == widget.movie.id;
+    });
+    
+    setState(() {
+      _isSaved = exists;
+    });
+  }
+
+  Future<void> _toggleSave() async {
+    final prefs = await SharedPreferences.getInstance();
+    final List<String> savedJson = prefs.getStringList('saved_list') ?? [];
+    
+    if (_isSaved) {
+      // Eliminar de guardados
+      savedJson.removeWhere((str) {
+        final data = jsonDecode(str);
+        return data['id'] == widget.movie.id;
+      });
+      
+      await prefs.setStringList('saved_list', savedJson);
+      setState(() => _isSaved = false);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Eliminado de guardados'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+    } else {
+      // Guardar película
+      final movieData = {
+        "id": widget.movie.id,
+        "title": widget.movie.title,
+        "posterPath": widget.movie.posterPath,
+        "backdropPath": widget.movie.backdropPath,
+        "voteAverage": widget.movie.voteAverage,
+        "releaseDate": widget.movie.releaseDate.toIso8601String(),
+      };
+      
+      savedJson.add(jsonEncode(movieData));
+      await prefs.setStringList('saved_list', savedJson);
+      setState(() => _isSaved = true);
+      
+      // Mostrar overlay de confirmación
+      if (mounted) {
+        _showConfirmationOverlay();
+      }
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('¡Guardado en tu lista! 📚'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+    }
+  }
+
+  void _showConfirmationOverlay() {
+    OverlayEntry? overlayEntry;
+    
+    overlayEntry = OverlayEntry(
+      builder: (context) => SaveConfirmationOverlay(
+        onComplete: () {
+          overlayEntry?.remove();
+        },
+      ),
+    );
+    
+    Overlay.of(context).insert(overlayEntry);
   }
 
   Future<void> _loadTrailer() async {
@@ -130,7 +218,6 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
     }
   }
 
-  // --- SOLUCIÓN PROBLEMA 2: Géneros Dinámicos ---
   String _getGenreName() {
     if (widget.movie.genreIds.isEmpty) return 'Sin género';
     
@@ -142,7 +229,6 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
       10770: "Película de TV", 53: "Suspense", 10752: "Bélica", 37: "Western"
     };
 
-    // Esto mapea todos los IDs y los une con una coma
     final names = widget.movie.genreIds
         .map((id) => genres[id])
         .where((name) => name != null)
@@ -217,7 +303,6 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
         bottom: false, 
         child: CustomScrollView(
           slivers: [
-            // 1. Barra de navegación superior fija y limpia (Ya no se expande, así el video no la tapa)
             SliverAppBar(
               pinned: true,
               backgroundColor: Colors.black,
@@ -235,29 +320,35 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                   },
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1), // Un fondo sutil para el botón
+                      color: Colors.white.withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
                   ),
                 ),
               ),
+              actions: [
+                // 🔥 USANDO EL WIDGET DE ANIMACIÓN DESDE shared/
+                SaveAnimationWidget(
+                  isSaved: _isSaved,
+                  onTap: _toggleSave,
+                  size: 28,
+                  activeColor: Colors.amber,
+                  inactiveColor: Colors.white,
+                ),
+              ],
             ),
             
-            // 2. El cuerpo de la pantalla
             SliverToBoxAdapter(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  
-                  // 👇 AQUÍ COLOCAMOS EL VIDEO (Más abajo, justo debajo de la AppBar)
                   SizedBox(
-                    height: 230, // Altura fija ideal para el reproductor
+                    height: 230,
                     width: double.infinity,
                     child: _buildMediaHeader(),
                   ),
                   
-                  // Todo el resto del contenido con su espaciado
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Column(
@@ -265,7 +356,6 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                       children: [
                         const SizedBox(height: 20),
                         
-                        // Fila del Título y Favorito
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.center,
@@ -275,6 +365,14 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                                 widget.movie.title, 
                                 style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)
                               ),
+                            ),
+                            // 🔥 USANDO EL WIDGET DE ANIMACIÓN DESDE shared/
+                            SaveAnimationWidget(
+                              isSaved: _isSaved,
+                              onTap: _toggleSave,
+                              size: 28,
+                              activeColor: Colors.amber,
+                              inactiveColor: Colors.white54,
                             ),
                             IconButton(
                               icon: Icon(
@@ -289,7 +387,6 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                         
                         const SizedBox(height: 8),
                         
-                        // Fila de metadatos (Año, Géneros, HD, Rating)
                         Row(
                           children: [
                             Text(widget.movie.releaseDate.year.toString(), style: const TextStyle(color: Colors.white54)),
@@ -298,7 +395,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                               child: Text(
                                 _getGenreName(), 
                                 style: const TextStyle(color: Colors.white54),
-                                overflow: TextOverflow.ellipsis, // Por si son muchos géneros, no rompa la UI
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -312,7 +409,6 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                         
                         const SizedBox(height: 24),
                         
-                        // Botón Reproducir / Pausar
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton.icon(
@@ -325,12 +421,10 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                         
                         const SizedBox(height: 12),
                         
-                        // Botón Reseña
                         SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: _showReviewModal, icon: const Icon(Icons.rate_review, color: Colors.white), label: const Text('Dejar una reseña', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)), style: ElevatedButton.styleFrom(backgroundColor: Colors.white24, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))))),
                         
                         const SizedBox(height: 24),
                         
-                        // Sinopsis
                         const Text('Sinopsis', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 8),
                         Text(widget.movie.overview.isEmpty ? 'No hay descripción disponible para esta película.' : widget.movie.overview, style: const TextStyle(color: Colors.white70, height: 1.5)),
