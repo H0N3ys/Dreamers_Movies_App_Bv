@@ -1,7 +1,7 @@
 class Movie {
   final bool adult;
   final String backdropPath;
-  final List<String> genreIds;
+  final List<int> genreIds; 
   final int id;
   final String originalLanguage;
   final String originalTitle;
@@ -37,8 +37,9 @@ class Movie {
       backdropPath: json['backdrop_path'] != null
           ? 'https://image.tmdb.org/t/p/w500${json['backdrop_path']}'
           : '',
+      
       genreIds: json['genre_ids'] != null
-          ? List<String>.from(json['genre_ids'].map((x) => x.toString()))
+          ? List<int>.from(json['genre_ids'])
           : [],
       id: json['id'] ?? 0,
       originalLanguage: json['original_language'] ?? '',
@@ -55,4 +56,5 @@ class Movie {
       voteCount: json['vote_count'] ?? 0,
     );
   }
+  
 }

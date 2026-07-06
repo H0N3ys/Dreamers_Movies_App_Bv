@@ -1,14 +1,14 @@
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_sign_in/google_sign_in.dart'; // <-- Nuevo import
 import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
 import 'package:dreamers_movies_app_bv/resources/styles/styles.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/auth/register_screen.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/custom_text_field.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/custom_filled_button.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/divider_with_text.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dreamers_movies_app_bv/domain/repositories/user_repositories.dart';
 
 class LoginScreen extends StatefulWidget {
   static const name = 'login-screen';
@@ -19,7 +19,16 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final UserRepository _userRepository = UserRepository();
+  
+  bool _isLoading = false;
+  final bool _obscurePassword = true;
+  
+  // Variables para la nueva UI de sesión guardada
+  bool _hasAccountSaved = false;
+  String _savedName = '';
   bool _showBiometric = false;
+
   late final GlobalKey<FormState> _formKey;
   late final TextEditingController _emailController;
   late final TextEditingController _passwordController;
@@ -30,7 +39,8 @@ class _LoginScreenState extends State<LoginScreen> {
     _formKey = GlobalKey<FormState>();
     _emailController = TextEditingController();
     _passwordController = TextEditingController();
-    _checkFirstLogin();
+
+    _loadSavedAccount();
   }
 
   @override
@@ -40,64 +50,152 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _checkFirstLogin() async {
+  
+  Future<void> _loadSavedAccount() async {
     final prefs = await SharedPreferences.getInstance();
+    final hasAccount = prefs.getBool('is_logged_in') ?? false;
+
+    if (hasAccount) {
+      setState(() {
+        _hasAccountSaved = true;
+        _savedName = prefs.getString('user_nombres') ?? 'Usuario';
+        
+        _emailController.text = prefs.getString('user_email') ?? '';
+        
+        _showBiometric = prefs.getBool('huella_enabled') ?? prefs.getBool('first_login_completed') ?? false;
+      });
+    }
+  }
+
+  
+  Future<void> _cambiarDeCuenta() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear(); // Borra la sesión local
+    
     setState(() {
-      _showBiometric = prefs.getBool('first_login_completed') ?? false;
+      _hasAccountSaved = false;
+      _emailController.clear();
+      _passwordController.clear();
+      _showBiometric = false;
     });
   }
 
- Future<void> _handleLogin() async {
-    if (_formKey.currentState!.validate()) {
-      try {
-        await Supabase.instance.client.auth.signInWithPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
-        );
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
 
+    setState(() => _isLoading = true);
+
+    try {
+      final user = await _userRepository.login(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+
+      if (user != null && mounted) {
         final prefs = await SharedPreferences.getInstance();
+
+        await prefs.setString('user_id', user.id);
+        await prefs.setString('user_email', user.email);
+        await prefs.setString('user_nombres', user.nombres ?? '');
+        await prefs.setString('user_apellidos', user.apellidos ?? '');
+        await prefs.setString('user_telefono', user.telefono ?? '');
+        
+        await prefs.setBool('is_logged_in', true);
+        await prefs.setBool('session_unlocked', true);
         await prefs.setBool('first_login_completed', true);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('¡Bienvenido!'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 1),
+          ),
+        );
 
         if (mounted) {
           context.go('/');
         }
-        
-      } on AuthException catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: Correo o contraseña incorrectos'),
-              backgroundColor: Colors.redAccent,
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Ocurrió un error inesperado al conectar'),
-              backgroundColor: Colors.redAccent,
-            ),
-          );
-        }
+      } else {
+        _showError('Contraseña incorrecta. Inténtalo de nuevo.');
+      }
+    } catch (e) {
+      _showError(e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }
 
-  Future<void> _showResetPasswordDialog() async {
-    final emailController = TextEditingController();
+  
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isLoading = true);
     
-    await showDialog(
+    try {
+      
+      final user = await _userRepository.loginWithGoogle();
+
+      
+      if (user != null && mounted) {
+        final prefs = await SharedPreferences.getInstance();
+
+        
+        await prefs.setString('user_id', user.id);
+        await prefs.setString('user_email', user.email);
+        await prefs.setString('user_nombres', user.nombres ?? '');
+        await prefs.setString('user_apellidos', user.apellidos ?? '');
+        await prefs.setString('user_telefono', user.telefono ?? '');
+        
+        await prefs.setBool('is_logged_in', true);
+        await prefs.setBool('session_unlocked', true);
+        await prefs.setBool('first_login_completed', true);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('¡Bienvenido ${user.nombres}!'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 1),
+          ),
+        );
+
+        
+        context.go('/'); 
+      }
+    } catch (e) {
+      print('Error Google Sign-In: $e');
+      _showError(e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showRecuperarPasswordDialog() {
+    showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Recuperar contraseña'),
-        content: TextField(
-          controller: emailController,
-          decoration: const InputDecoration(
-            hintText: 'Ingresa tu correo electrónico',
-            border: OutlineInputBorder(),
-          ),
-          keyboardType: TextInputType.emailAddress,
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Para recuperar tu contraseña, contacta al administrador.\n\n'
+              'En una app local, la recuperación de contraseña debe hacerse '
+              'manualmente desde la base de datos.',
+              style: TextStyle(fontSize: 14),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -118,10 +216,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ],
       ),
     );
-    emailController.dispose();
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -138,7 +233,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   Image.asset(
                     'assets/images/logoBueno.png',
-                    height: 152,
+                    height: 120,
                     fit: BoxFit.contain,
                   ),
                   
@@ -161,44 +256,48 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   
-                  const SizedBox(height: 48),
+                  const SizedBox(height: 8),
 
-                  const Text(
-                    'Mas que películas, experiencias.',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                  Text(
+                    _hasAccountSaved 
+                      ? 'Hola de nuevo, $_savedName 👋' 
+                      : 'Más que películas, experiencias.',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
                       fontFamily: AppTheme.secondaryFont,
+                      color: AppColors.secondaryColor,
                     ),
                   ),
                   
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 48),
                   
-                  CustomTextField(
-                    label: 'Correo electrónico',
-                    hintText: 'ejemplo@correo.com',
-                    icon: Icons.email_outlined,
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.next,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Ingresa tu correo';
-                      }
-                      if (!value.contains('@') || !value.contains('.')) {
-                        return 'Correo inválido';
-                      }
-                      return null;
-                    },
-                  ),
-                  
-                  const SizedBox(height: 20),
+                  if (!_hasAccountSaved) ...[
+                    CustomTextField(
+                      label: 'Correo electrónico',
+                      hintText: 'ejemplo@correo.com',
+                      icon: Icons.email_outlined,
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Ingresa tu correo';
+                        }
+                        if (!value.contains('@') || !value.contains('.')) {
+                          return 'Correo inválido';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                  ],
                   
                   CustomTextField(
                     label: 'Contraseña',
                     hintText: 'Ingresa tu contraseña',
                     icon: Icons.lock_outline,
-                    obscureText: true,
+                    obscureText: _obscurePassword,
                     controller: _passwordController,
                     keyboardType: TextInputType.visiblePassword,
                     textInputAction: TextInputAction.done,
@@ -206,6 +305,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Ingresa tu contraseña';
+                      }
+                      if (value.length < 6) {
+                        return 'La contraseña debe tener al menos 6 caracteres';
                       }
                       return null;
                     },
@@ -216,42 +318,110 @@ class _LoginScreenState extends State<LoginScreen> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: _showResetPasswordDialog,
-                      child: Text(
+                      onPressed: _showRecuperarPasswordDialog,
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                      ),
+                      child: const Text(
                         '¿Olvidaste tu contraseña?',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.secondaryColor,
+                          fontFamily: AppTheme.primaryFont,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 32),
+                  
+                  _isLoading 
+                    ? const CircularProgressIndicator()
+                    : CustomFilledButton(
+                        text: _hasAccountSaved ? 'Desbloquear' : 'Iniciar Sesión',
+                        onPressed: _handleLogin,
+                      ),
+                  
+                  if (_hasAccountSaved) ...[
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: _cambiarDeCuenta,
+                      child: Text(
+                        'Ingresar con otra cuenta',
+                        style: TextStyle(
+                          color: Colors.grey.withOpacity(0.8),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  if (_showBiometric) ..._buildBiometricSection(context),
+
+                  
+                  if (!_hasAccountSaved) ...[
+                    const SizedBox(height: 24),
+                    const DividerWithText(
+                      text: 'O INICIA SESIÓN CON',
+                      color: AppColors.secondaryColor,
+                    ),
+                    const SizedBox(height: 24),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 50),
+                        side: BorderSide(color: Colors.grey.shade300),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      icon: Image.network(
+                        'https://cdn.freebiesupply.com/logos/thumbs/2x/google-g-2015-logo.png',
+                        height: 24,
+                      ),
+                      label: Text(
+                        'Continuar con Google',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      onPressed: _isLoading ? null : _handleGoogleSignIn,
+                    ),
+                    
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '¿No tienes cuenta?',
+                          style: TextStyle(
+                            color: Colors.grey.withOpacity(0.7),
+                            fontFamily: AppTheme.primaryFont,
+                            fontSize: 14,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            context.pushNamed(RegisterScreen.name);
+                          },
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                          ),
+                          child: const Text(
+                            'Regístrate aquí',
+                            style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: AppColors.secondaryColor,
                               fontFamily: AppTheme.primaryFont,
+                              fontSize: 14,
                             ),
-                      ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
+                  ],
                   
-                  const SizedBox(height: 40),
-                  
-                  CustomFilledButton(
-                    text: 'Iniciar Sesión',
-                    onPressed: _handleLogin,
-                  ),
-                 if (_showBiometric) ..._buildBiometricSection(context),
-
-
-                  const SizedBox(height: 24),
-                  
-                  TextButton(
-                    onPressed: () {
-                      context.pushNamed(RegisterScreen.name);
-                    },
-                    child: Text(
-                      '¿No tienes cuenta? Regístrate aquí',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.secondaryColor,
-                        fontFamily: AppTheme.primaryFont, 
-                      ),
-                    ),
-                  ),
+                  const SizedBox(height: 20),
                 ],
               ),
             ),
@@ -262,36 +432,31 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   List<Widget> _buildBiometricSection(BuildContext context) {
-  return [
-    const SizedBox(height: 24),
-    
-    DividerWithText(
-      text: 'o también',
-      color: AppColors.secondaryColor,
-    ),
-    
-    const SizedBox(height: 24),
-    
-    SizedBox(
-      width: double.infinity,
-      child: OutlinedButton.icon(
-        onPressed: () {
-          context.pushNamed('local-auth-screen');
-        },
-        icon: const Icon(Icons.fingerprint_rounded), 
-        
-        label: const Text('Entrar con huella o rostro'), 
-        
-        style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.secondaryColor,
-          side: const BorderSide(color: AppColors.secondaryColor, width: 2),
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12), 
+    return [
+      const SizedBox(height: 24),
+      const DividerWithText(
+        text: 'o también',
+        color: AppColors.secondaryColor,
+      ),
+      const SizedBox(height: 24),
+      SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: () {
+            context.pushNamed('local-auth-screen');
+          },
+          icon: const Icon(Icons.fingerprint_rounded), 
+          label: const Text('Entrar con huella'), 
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.secondaryColor,
+            side: const BorderSide(color: AppColors.secondaryColor, width: 2),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12), 
+            ),
           ),
         ),
       ),
-    ),
-  ];
-}
+    ];
+  }
 }

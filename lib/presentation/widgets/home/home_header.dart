@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
 import 'package:dreamers_movies_app_bv/resources/styles/styles.dart';
 
@@ -12,52 +11,55 @@ class HomeHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          GestureDetector(
-            onLongPress: () async {
-              await Supabase.instance.client.auth.signOut();
-              if (context.mounted) {
-                context.goNamed('login-screen');
-              }
-            },
-            child: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white24,
-                border: Border.all(color: Colors.white38, width: 1.5),
+          
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color.fromARGB(0, 255, 255, 255), 
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Image.asset(
+                  'assets/images/logoBueno.png',
+                  fit: BoxFit.cover,
+                ),
               ),
-              child: const Icon(Icons.person_outline, color: Colors.white70, size: 24),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Hola, Pablo',
-                  style: TextStyle(
-                    fontFamily: AppTheme.secondaryFont,
+              const SizedBox(width: 14),
+              RichText(
+                text: TextSpan(
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontFamily: AppTheme.primaryFont,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    fontSize: 18,
                   ),
+                  children: const [
+                    TextSpan(
+                      text: 'Ci',
+                      style: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
+                    ),
+                    TextSpan(
+                      text: 'nexa',
+                      style: TextStyle(color: Colors.white), 
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  'Veamos tu película favorita',
-                  style: TextStyle(
-                    fontFamily: AppTheme.secondaryFont,
-                    color: Colors.white60,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-         
+          
+          
+          IconButton(
+            icon: const Icon(Icons.search_rounded, color: Colors.white, size: 28),
+            onPressed: () {
+              
+              context.push('/search'); 
+            },
+          ),
         ],
       ),
     );
