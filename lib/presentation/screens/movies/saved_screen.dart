@@ -149,7 +149,6 @@ class _SavedScreenState extends State<SavedScreen> {
   }
 }
 
-// 🔥 NUEVO WIDGET PARA TARJETA DE GUARDADOS CON DISEÑO MEJORADO
 class _SavedMovieCard extends StatelessWidget {
   final Movie movie;
   final VoidCallback onTap;

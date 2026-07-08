@@ -9,7 +9,6 @@ import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
 import 'package:dreamers_movies_app_bv/domain/entities/movie_entities.dart';
 import 'package:dreamers_movies_app_bv/infrastructure/datasources/tmdb_datasource.dart';
 import 'package:dreamers_movies_app_bv/domain/datasources/local_reviews_datasource.dart';
-// 🔥 IMPORTS DE LOS NUEVOS WIDGETS
 import 'package:dreamers_movies_app_bv/presentation/widgets/shared/save_animation_widget.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/shared/save_confirmation_overlay.dart';
 
@@ -328,7 +327,6 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                 ),
               ),
               actions: [
-                // 🔥 USANDO EL WIDGET DE ANIMACIÓN DESDE shared/
                 SaveAnimationWidget(
                   isSaved: _isSaved,
                   onTap: _toggleSave,
@@ -366,7 +364,6 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                                 style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)
                               ),
                             ),
-                            // 🔥 USANDO EL WIDGET DE ANIMACIÓN DESDE shared/
                             SaveAnimationWidget(
                               isSaved: _isSaved,
                               onTap: _toggleSave,
