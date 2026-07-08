@@ -292,6 +292,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: Colors.white.withAlpha(40),
                                 blurRadius: 15,
                                 spreadRadius: 1,
+                                offset: const Offset(0, 4),
                               )
                             ]
                           : [
@@ -532,6 +533,42 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SliverToBoxAdapter(child: SizedBox(height: 10)),
                 SliverToBoxAdapter(child: _buildAnimatedCarousel(_nowPlayingMovies.take(6).toList())),
+
+                // === MODIFICACIÓN: BOTONES DE PRUEBA DE ERRORES (SIN QUITAR NADA) ===
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange.withOpacity(0.2),
+                              foregroundColor: Colors.orange,
+                              side: const BorderSide(color: Colors.orange),
+                            ),
+                            onPressed: () => context.go('/ruta-invalida-404'),
+                            icon: const Icon(Icons.bug_report),
+                            label: const Text('Probar 404'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red.withOpacity(0.2),
+                              foregroundColor: Colors.redAccent,
+                              side: const BorderSide(color: Colors.redAccent),
+                            ),
+                            onPressed: () => context.go('/server-error'),
+                            icon: const Icon(Icons.gpp_bad),
+                            label: const Text('Probar 500'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
                 const SliverToBoxAdapter(child: SizedBox(height: 24)),
                 const SliverToBoxAdapter(child: HomeSectionHeader(title: 'Explorar')),

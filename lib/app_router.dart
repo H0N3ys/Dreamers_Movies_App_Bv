@@ -8,21 +8,38 @@ import 'package:dreamers_movies_app_bv/presentation/screens/auth/register_screen
 import 'package:dreamers_movies_app_bv/presentation/screens/movies/home_screen.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/movies/search_screen.dart';
 
+import 'package:dreamers_movies_app_bv/presentation/screens/errors/error_404_screen.dart';
+import 'package:dreamers_movies_app_bv/presentation/screens/errors/error_500_screen.dart';
+
 final appRouter = GoRouter(
   initialLocation: '/splash',
 
+  // Si todo falla en las rutas, esto dibuja tu pantalla 404
+  errorBuilder: (context, state) => const Error404Screen(),
+
   redirect: (context, state) {
+    // Usamos state.uri.path porque es el string real de hacia dónde intenta ir el usuario
+    final location = state.uri.path;
+
     final session = Supabase.instance.client.auth.currentSession;
     final estaAutenticado = session != null;
 
-    final isGoingToLogin = state.matchedLocation == '/login';
-    final isGoingToRegister = state.matchedLocation == '/register';
-    final isGoingToSplash = state.matchedLocation == '/splash';
+    final isGoingToLogin = location == '/login';
+    final isGoingToRegister = location == '/register';
+    final isGoingToSplash = location == '/splash';
+    final isGoingToServerError = location == '/server-error';
+
+    // Si va a una ruta que no existe (404), no lo mandes al login, deja que pase al errorBuilder
+    final rutasValidas = ['/splash', '/login', '/register', '/local-auth', '/', '/search', '/server-error'];
+    if (!rutasValidas.contains(location)) {
+      return null;
+    }
 
     if (!estaAutenticado &&
         !isGoingToLogin &&
         !isGoingToRegister &&
-        !isGoingToSplash) {
+        !isGoingToSplash &&
+        !isGoingToServerError) {
       return '/login';
     }
 
@@ -34,6 +51,10 @@ final appRouter = GoRouter(
   },
 
   routes: [
+    GoRoute(
+      path: '/server-error',
+      builder: (context, state) => const Error500Screen(),
+    ),
     GoRoute(
       path: '/splash',
       name: SplashScreen.name,
