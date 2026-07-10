@@ -1,4 +1,3 @@
-
 import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -40,7 +39,6 @@ class DatabaseHelper {
     final path = join(directory.path, 'cinexa.db');
 
     print(' Base de datos en: $path');
-
     return await openDatabase(
       path,
       version: 1,
@@ -50,7 +48,6 @@ class DatabaseHelper {
 
   Future<void> _onCreate(Database db, int version) async {
     print(' Creando base de datos...');
-
     await db.execute('''
       CREATE TABLE usuario (
         id_usuario INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -94,6 +91,7 @@ class DatabaseHelper {
     ''');
     print('✅ Tabla "pelicula" creada');
 
+    // MODIFICADO: Eliminada la restricción UNIQUE(id_perfil, id_pelicula) para permitir historial de comentarios
     await db.execute('''
       CREATE TABLE resena (
         id_resena INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -103,8 +101,7 @@ class DatabaseHelper {
         comentario TEXT,
         fecha_creacion TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (id_perfil) REFERENCES perfil(id_perfil) ON DELETE CASCADE,
-        FOREIGN KEY (id_pelicula) REFERENCES pelicula(id_pelicula) ON DELETE CASCADE,
-        UNIQUE(id_perfil, id_pelicula)
+        FOREIGN KEY (id_pelicula) REFERENCES pelicula(id_pelicula) ON DELETE CASCADE
       )
     ''');
     print('✅ Tabla "resena" creada');
@@ -136,14 +133,12 @@ class DatabaseHelper {
       ('Gladiador', 'Un general romano busca venganza', 155, 2000, 'Acción', 'gladiator.jpg', 1)
     ''');
     print(' 10 películas de ejemplo insertadas');
-
     print(' Base de datos creada exitosamente');
   }
 
  
   Future<Map<String, dynamic>?> registerUser(Map<String, dynamic> userData) async {
     final db = await database;
-
     print(' Registrando usuario: ${userData['email']}');
 
     try {
@@ -152,7 +147,6 @@ class DatabaseHelper {
         where: 'email = ?',
         whereArgs: [userData['email']],
       );
-
       if (existing.isNotEmpty) {
         throw Exception('El email ya está registrado');
       }
@@ -166,7 +160,6 @@ class DatabaseHelper {
         'fecha_registro': DateTime.now().toIso8601String(),
         'es_activo': 1,
       });
-
       print('✅ Usuario insertado con ID: $userId');
 
       await db.insert('perfil', {
@@ -175,7 +168,6 @@ class DatabaseHelper {
         'idioma_preferido': 'es',
         'restriccion_infantil': 0,
       });
-
       print(' Perfil creado para usuario ID: $userId');
 
       final result = await db.query(
@@ -183,7 +175,6 @@ class DatabaseHelper {
         where: 'id_usuario = ?',
         whereArgs: [userId],
       );
-
       return result.first;
     } catch (e) {
       print(' Error en registerUser: $e');
@@ -218,7 +209,6 @@ class DatabaseHelper {
     required String comentario,
   }) async {
     final db = await database;
-
     try {
       await db.insert(
         'pelicula', 
@@ -233,6 +223,7 @@ class DatabaseHelper {
         conflictAlgorithm: ConflictAlgorithm.ignore,
       );
 
+      // MODIFICADO: Cambiado a ConflictAlgorithm.abort para acumular mensajes sin sobreescribir
       await db.insert(
         'resena', 
         {
@@ -242,9 +233,8 @@ class DatabaseHelper {
           'comentario': comentario,
           'fecha_creacion': DateTime.now().toIso8601String(),
         }, 
-        conflictAlgorithm: ConflictAlgorithm.replace,
+        conflictAlgorithm: ConflictAlgorithm.abort,
       );
-
       print(' Reseña guardada localmente para la película: $titulo');
     } catch (e) {
       print(' Error al guardar la reseña local: $e');
@@ -266,7 +256,6 @@ class DatabaseHelper {
     required String apellidos,
   }) async {
     final db = await database;
-
     print(' Procesando Google Sign-In para: $email');
 
     try {
@@ -281,11 +270,10 @@ class DatabaseHelper {
         return existing.first;
       }
 
-      
       print('🆕 El usuario no existe. Creando registro local con datos de Google...');
       final userId = await db.insert('usuario', {
         'email': email,
-        'password_hash': 'GOOGLE_$googleId', // Identificador para saber que vino de Google
+        'password_hash': 'GOOGLE_$googleId',
         'nombres': nombres,
         'apellidos': apellidos,
         'telefono': '',
@@ -293,7 +281,6 @@ class DatabaseHelper {
         'es_activo': 1,
       });
 
-      
       await db.insert('perfil', {
         'id_usuario': userId,
         'nombre_perfil': 'Principal',
@@ -306,7 +293,6 @@ class DatabaseHelper {
         where: 'id_usuario = ?',
         whereArgs: [userId],
       );
-
       return result.first;
     } catch (e) {
       print('❌ Error en authOrRegisterWithGoogle: $e');

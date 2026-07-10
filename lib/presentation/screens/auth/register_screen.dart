@@ -83,7 +83,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _hasNumber = false;
   bool _hasSpecial = false;
 
-  // --- NUEVO: Reglas de Confirmar Contraseña ---
+  // Reglas de Confirmar Contraseña
   bool _showConfirmPasswordRules = false;
   bool _isConfirmPasswordEmpty = true;
   bool _confirmHasMinMax = false;
@@ -110,8 +110,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _showNameRules = _nombresFocus.hasFocus;
       _showLastNameRules = _apellidosFocus.hasFocus;
       _showEmailRules = _emailFocus.hasFocus;
-
-      // Separamos los focus de las contraseñas
       _showPasswordRules = _passwordFocus.hasFocus;
       _showConfirmPasswordRules = _confirmPasswordFocus.hasFocus;
     });
@@ -125,13 +123,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _nameStartsWithUpper =
           value.isNotEmpty && RegExp(r'^[A-ZÁÉÍÓÚÑ]').hasMatch(value);
       _nameOnlyLetters = value.isNotEmpty && _nameRegex.hasMatch(value);
-      // CORREGIDO:
-      _nameCorrectCasing =
-          value.isNotEmpty &&
-          RegExp(
-            r'^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(\s[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)*$',
-          ).hasMatch(value);
 
+      // NUEVA REGLA: Cada palabra debe iniciar con mayúscula y continuar con minúsculas
+      _nameCorrectCasing = value.isNotEmpty && RegExp(r'^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]*(\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]*)*\s*$').hasMatch(value);
     });
   }
 
@@ -143,12 +137,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _lastNameStartsWithUpper =
           value.isNotEmpty && RegExp(r'^[A-ZÁÉÍÓÚÑ]').hasMatch(value);
       _lastNameOnlyLetters = value.isNotEmpty && _nameRegex.hasMatch(value);
-      // CORREGIDO:
-      _lastNameCorrectCasing =
-          value.isNotEmpty &&
-          RegExp(
-            r'^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(\s[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)*$',
-          ).hasMatch(value);
+
+      // NUEVA REGLA: Cada palabra debe iniciar con mayúscula y continuar con minúsculas
+      _lastNameCorrectCasing = value.isNotEmpty && RegExp(r'^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]*(\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]*)*\s*$').hasMatch(value);
 
     });
   }
@@ -222,14 +213,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _hasUppercase = value.contains(RegExp(r'[A-Z]'));
       _hasNumber = value.contains(RegExp(r'[0-9]'));
       _hasSpecial = value.contains(RegExp(r'[\W_]'));
-
-      // Validamos en tiempo real si ya coincide con lo que hay en confirmar
-      _passwordsMatch =
-          value.isNotEmpty && value == _confirmPasswordController.text;
+      
+      _passwordsMatch = value.isNotEmpty && value == _confirmPasswordController.text;
     });
   }
 
-  // --- NUEVO: Validar la segunda contraseña ---
   void _checkConfirmPasswordRules(String value) {
     setState(() {
       _isConfirmPasswordEmpty = value.isEmpty;
@@ -237,8 +225,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _confirmHasUppercase = value.contains(RegExp(r'[A-Z]'));
       _confirmHasNumber = value.contains(RegExp(r'[0-9]'));
       _confirmHasSpecial = value.contains(RegExp(r'[\W_]'));
-
-      // Valida si coinciden de forma exacta
+      
       _passwordsMatch = value.isNotEmpty && value == _passwordController.text;
     });
   }
@@ -336,7 +323,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  // Generador de reglas genérico para usarlo en todos lados
   Widget _buildDynamicRule(String text, bool isValid, bool isEmpty) {
     Color color;
     IconData icon;
@@ -417,9 +403,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   CustomTextField(
                     label: 'Nombre(s)',
 
-                    hintText: 'Ej. Carlos Adrian', 
-
-                    
+                    hintText: 'Ej. Charlye Ramon', 
 
                     icon: Icons.person_outline,
                     controller: _nombresController,
@@ -450,21 +434,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
 
-                          _buildDynamicRule(
-                            'Iniciar con mayúscula',
-                            _nameStartsWithUpper,
-                            _isNameEmpty,
-                          ),
-                          _buildDynamicRule(
-                            'Solo letras (sin números ni símbolos)',
-                            _nameOnlyLetters,
-                            _isNameEmpty,
-                          ),
-                          _buildDynamicRule(
-                            'Coherencia (siguientes palabras en minúscula)',
-                            _nameCorrectCasing,
-                            _isNameEmpty,
-                          ),
+                          _buildDynamicRule('Solo letras (sin números ni símbolos)', _nameOnlyLetters, _isNameEmpty),
+                          _buildDynamicRule('Cada palabra debe iniciar con mayúscula', _nameCorrectCasing, _isNameEmpty),
 
                         ],
                       ),
@@ -476,7 +447,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   // --- SECCIÓN APELLIDOS ---
                   CustomTextField(
                     label: 'Apellido(s)',
-                    hintText: 'Ej. Zamorano Rodriguez',
+
+                    hintText: 'Ej. Rosas Zamorano',
+
                     icon: Icons.person_outline,
                     controller: _apellidosController,
                     focusNode: _apellidosFocus,
@@ -522,6 +495,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             _lastNameCorrectCasing,
                             _isLastNameEmpty,
                           ),
+                          _buildDynamicRule('Solo letras (sin números ni símbolos)', _lastNameOnlyLetters, _isLastNameEmpty),
+                          _buildDynamicRule('Cada palabra debe iniciar con mayúscula', _lastNameCorrectCasing, _isLastNameEmpty),
                         ],
                       ),
                     ),
@@ -714,7 +689,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     },
                   ),
 
-                  // Caja de reglas exclusiva para Confirmar Contraseña
                   AnimatedSize(
                     duration: const Duration(milliseconds: 300),
                     curve: Curves.easeInOut,
@@ -750,6 +724,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             _passwordsMatch,
                             _isConfirmPasswordEmpty,
                           ),
+                          _buildDynamicRule('De 8 a 16 caracteres', _confirmHasMinMax, _isConfirmPasswordEmpty),
+                          _buildDynamicRule('Al menos 1 letra mayúscula', _confirmHasUppercase, _isConfirmPasswordEmpty),
+                          _buildDynamicRule('Al menos 1 número', _confirmHasNumber, _isConfirmPasswordEmpty),
+                          _buildDynamicRule('Al menos 1 carácter especial', _confirmHasSpecial, _isConfirmPasswordEmpty),
+                          _buildDynamicRule('Las contraseñas coinciden exactamente', _passwordsMatch, _isConfirmPasswordEmpty),
                         ],
                       ),
                     ),
