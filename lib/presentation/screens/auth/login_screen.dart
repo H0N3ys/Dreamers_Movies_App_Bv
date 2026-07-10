@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
 import 'package:dreamers_movies_app_bv/resources/styles/styles.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/auth/register_screen.dart';
@@ -19,10 +20,9 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final UserRepository _userRepository = UserRepository();
-  
   bool _isLoading = false;
   final bool _obscurePassword = true;
-  
+
   // Variables para la nueva UI de sesión guardada
   bool _hasAccountSaved = false;
   String _savedName = '';
@@ -38,7 +38,6 @@ class _LoginScreenState extends State<LoginScreen> {
     _formKey = GlobalKey<FormState>();
     _emailController = TextEditingController();
     _passwordController = TextEditingController();
-
     _loadSavedAccount();
   }
 
@@ -92,7 +91,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (user != null && mounted) {
         final prefs = await SharedPreferences.getInstance();
-
         await prefs.setString('user_id', user.id);
         await prefs.setString('user_email', user.email);
         await prefs.setString('user_nombres', user.nombres ?? '');
@@ -187,7 +185,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Logo (Más chico como pediste: 120 de altura)
+                  // Logo 
                   Image.asset(
                     'assets/images/logoBueno.png',
                     height: 120,
@@ -215,11 +213,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   
                   const SizedBox(height: 8),
-
+                  
                   // Subtítulo Dinámico
                   Text(
                     _hasAccountSaved 
-                      ? 'Hola de nuevo, $_savedName 👋' 
+                      ? 'Hola de nuevo, $_savedName'
                       : 'Más que películas, experiencias.',
                     style: const TextStyle(
                       fontSize: 16,
@@ -244,8 +242,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         if (value == null || value.isEmpty) {
                           return 'Ingresa tu correo';
                         }
-                        if (!value.contains('@') || !value.contains('.')) {
-                          return 'Correo inválido';
+                        // Regex estricto idéntico al de registro
+                        final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                        if (!emailRegex.hasMatch(value)) {
+                          return 'Ingresa un correo electrónico válido';
                         }
                         return null;
                       },
@@ -267,8 +267,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Ingresa tu contraseña';
                       }
-                      if (value.length < 6) {
-                        return 'La contraseña debe tener al menos 6 caracteres';
+                      // Actualizado a 8 caracteres para coincidir con el registro
+                      if (value.length < 8) {
+                        return 'La contraseña debe tener al menos 8 caracteres';
                       }
                       return null;
                     },

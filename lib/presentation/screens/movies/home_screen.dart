@@ -17,7 +17,7 @@ import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_category_f
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_section_header.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/movie_card.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_bottom_nav.dart';
-import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_reviews.dart'; // Importa el widget de reseñas
+import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_reviews.dart'; 
 
 class HomeScreen extends StatefulWidget {
   static const name = 'home-screen';
@@ -36,8 +36,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Movie> _popularMoviesApi = [];
   List<Movie> _topRatedMovies = [];
   List<Movie> _upcomingMovies = [];
-  List<Movie> _mostViewedMovies = []; // NUEVO: Lo más visto
-  List<Movie> _topMexicoMovies = []; // NUEVO: Top en México
+  List<Movie> _mostViewedMovies = []; 
+  List<Movie> _topMexicoMovies = []; 
 
   List<Movie> _allMoviesPool = []; 
   List<Movie> _filteredMovies = []; 
@@ -46,9 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool _isLoadingMovies = true;
   int _selectedCategoryIndex = 0;
-  int _currentNavIndex = 0;
 
-  // Categorías con sus IDs oficiales de TMDB
   final List<Map<String, dynamic>> _categories = [
     {'name': 'Todo', 'id': 0},
     {'name': 'Acción', 'id': 28},
@@ -58,7 +56,6 @@ class _HomeScreenState extends State<HomeScreen> {
     {'name': 'Terror', 'id': 27},
   ];
 
-  // Reseñas estáticas de ejemplo
   final List<ReviewData> _staticReviews = const [
     ReviewData(
       userName: 'María González',
@@ -115,8 +112,8 @@ class _HomeScreenState extends State<HomeScreen> {
         _movieDatasource.getPopular(),
         _movieDatasource.getTopRated(),
         _movieDatasource.getUpcoming(),
-        _loadMostViewedMovies(), // NUEVO
-        _loadTopMexicoMovies(), // NUEVO
+        _loadMostViewedMovies(), 
+        _loadTopMexicoMovies(), 
         _loadRecentReviews(),
       ]);
 
@@ -137,7 +134,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ..._topMexicoMovies,
         ];
         
-        // Elimina duplicados por ID
         final Map<int, Movie> uniqueMovies = {for (var m in _allMoviesPool) m.id: m};
         _allMoviesPool = uniqueMovies.values.toList();
         
@@ -154,26 +150,22 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // NUEVO: Cargar "Lo más visto"
+  // Trae películas de la PÁGINA 2 para que sean distintas
   Future<List<Movie>> _loadMostViewedMovies() async {
     try {
-      // Puedes usar popular o crear tu propio endpoint
-      final popular = await _movieDatasource.getPopular();
+      final popular = await _movieDatasource.getPopular(page: 2);
       return popular.take(10).toList();
     } catch (e) {
-      print('Error cargando más vistas: $e');
       return [];
     }
   }
 
-  // NUEVO: Cargar "Top en México"
+  // Trae estrenos de la PÁGINA 2 para que varíe la lista
   Future<List<Movie>> _loadTopMexicoMovies() async {
     try {
-      // Puedes usar now playing con región MX o crear tu propio endpoint
-      final nowPlaying = await _movieDatasource.getNowPlaying();
+      final nowPlaying = await _movieDatasource.getNowPlaying(page: 2);
       return nowPlaying.take(10).toList();
     } catch (e) {
-      print('Error cargando top México: $e');
       return [];
     }
   }
@@ -192,7 +184,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ''');
       setState(() => _recentReviews = reviews);
     } catch (e) {
-      print('Error cargando reseñas: $e');
+      debugPrint('Error cargando reseñas: $e');
     }
   }
 
@@ -210,6 +202,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  // CARRUSEL ACTUALIZADO CON EFECTO DE SOMBRA / "SHADE"
   Widget _buildAnimatedCarousel(List<Movie> movies) {
     if (movies.isEmpty) return const SizedBox();
     return CarouselSlider.builder(
@@ -229,26 +222,49 @@ class _HomeScreenState extends State<HomeScreen> {
         return GestureDetector(
           onTap: () => context.pushNamed('movie-details', extra: movie),
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 5.0),
+            margin: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 8.0),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
+              // Añade profundidad y hace que la tarjeta "salte" a la vista
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.5),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ],
               image: DecorationImage(
                 image: NetworkImage('https://image.tmdb.org/t/p/w500${movie.backdropPath}'),
                 fit: BoxFit.cover,
-                colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.3), BlendMode.darken),
+                // Quitamos el colorFilter plano de aquí
               ),
             ),
-            child: Align(
-              alignment: Alignment.bottomLeft,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  movie.title,
-                  style: const TextStyle(
-                    color: Colors.white, 
-                    fontSize: 18, 
-                    fontWeight: FontWeight.bold, 
-                    shadows: [Shadow(color: Colors.black, blurRadius: 4)]
+            child: Container(
+              // Gradiente suave: Transparente arriba, negro oscuro abajo
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withOpacity(0.3),
+                    Colors.black.withOpacity(0.95),
+                  ],
+                  stops: const [0.4, 0.7, 1.0],
+                ),
+              ),
+              child: Align(
+                alignment: Alignment.bottomLeft,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    movie.title,
+                    style: const TextStyle(
+                      color: Colors.white, 
+                      fontSize: 18, 
+                      fontWeight: FontWeight.bold, 
+                    ),
                   ),
                 ),
               ),
@@ -268,18 +284,36 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     return SizedBox(
       height: 230,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 22),
-        itemCount: movies.length,
-        itemBuilder: (context, index) {
-          final movie = movies[index];
-          return GestureDetector(
-            onTap: () => context.pushNamed('movie-details', extra: movie),
-            child: MovieCard(movie: movie),
-          );
+      child: ShaderMask(
+        shaderCallback: (Rect bounds) {
+          return LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [
+              Colors.transparent,
+              AppColors.accentColor.withValues(alpha: 0.05),
+              AppColors.accentColor,
+              AppColors.accentColor,
+              AppColors.accentColor.withValues(alpha: 0.05),
+              Colors.transparent,
+            ],
+            stops: const [0.0, 0.03, 0.1, 0.88, 0.97, 1.0],
+          ).createShader(bounds);
         },
+        blendMode: BlendMode.dstIn,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 22),
+          itemCount: movies.length,
+          itemBuilder: (context, index) {
+            final movie = movies[index];
+            return GestureDetector(
+              onTap: () => context.pushNamed('movie-details', extra: movie),
+              child: MovieCard(movie: movie),
+            );
+          },
+        ),
       ),
     );
   }
@@ -304,12 +338,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SliverToBoxAdapter(child: HomeSearchBar()),
                   const SliverToBoxAdapter(child: SizedBox(height: 20)),
 
-                  // Carrusel Destacado (En Cartelera)
+                  // Carrusel Destacado
                   SliverToBoxAdapter(child: _buildAnimatedCarousel(_nowPlayingMovies.take(6).toList())),
 
-                  // Filtro por Categorías
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                  SliverToBoxAdapter(child: HomeSectionHeader(title: 'Explorar')),
+                  SliverToBoxAdapter(child: HomeSectionHeader(title: 'Explorar', onSeeAll: () => context.go('/search'))),
                   const SliverToBoxAdapter(child: SizedBox(height: 14)),
                   SliverToBoxAdapter(
                     child: HomeCategoryFilter(
@@ -319,7 +352,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
 
-                  // Fila 1: Resultados del Filtro o Populares
                   const SliverToBoxAdapter(child: SizedBox(height: 28)),
                   SliverToBoxAdapter(
                     child: HomeSectionHeader(
@@ -329,22 +361,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SliverToBoxAdapter(child: SizedBox(height: 14)),
                   SliverToBoxAdapter(child: _buildMovieRow(_filteredMovies)),
 
-                  // NUEVO: Lo más visto
                   const SliverToBoxAdapter(child: SizedBox(height: 28)),
                   SliverToBoxAdapter(
-                    child: HomeSectionHeader(
-                      title: '🔥 Lo más visto',
-                    ),
+                    child: HomeSectionHeader(title: '🔥 Lo más visto'),
                   ),
                   const SliverToBoxAdapter(child: SizedBox(height: 14)),
                   SliverToBoxAdapter(child: _buildMovieRow(_mostViewedMovies)),
 
-                  // NUEVO: Top en México
                   const SliverToBoxAdapter(child: SizedBox(height: 28)),
                   SliverToBoxAdapter(
-                    child: HomeSectionHeader(
-                      title: '🇲🇽 Top en México',
-                    ),
+                    child: HomeSectionHeader(title: '🇲🇽 Top en México'),
                   ),
                   const SliverToBoxAdapter(child: SizedBox(height: 14)),
                   SliverToBoxAdapter(child: _buildMovieRow(_topMexicoMovies)),

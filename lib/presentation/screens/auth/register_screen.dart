@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
 import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
 import 'package:dreamers_movies_app_bv/resources/styles/styles.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/custom_text_field.dart';
@@ -22,28 +23,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _telefonoController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
-  
+
   final UserRepository _userRepository = UserRepository();
   bool _isLoading = false;
   final _formKey = GlobalKey<FormState>();
 
   Future<void> _handleRegister() async {
+    // Si el formulario no pasa las validaciones de los TextFields, se detiene aquí
     if (!_formKey.currentState!.validate()) return;
-    
-    if (_passwordController.text != _confirmPasswordController.text) {
-      _showError('Las contraseñas no coinciden');
-      return;
-    }
-    
-    if (_passwordController.text.length < 6) {
-      _showError('La contraseña debe tener al menos 6 caracteres');
-      return;
-    }
 
     setState(() => _isLoading = true);
 
-    try {
-     
+    try {      
       final user = await _userRepository.register(
         email: _emailController.text.trim(),
         password: _passwordController.text,
@@ -53,22 +44,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       if (user != null && mounted) {
-        // Mostrar éxito
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('¡Registro exitoso! Ahora inicia sesión'),
-                  backgroundColor: Colors.green,
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('¡Registro exitoso! Ahora inicia sesión'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+
         _nombresController.clear();
         _apellidosController.clear();
         _emailController.clear();
         _telefonoController.clear();
         _passwordController.clear();
         _confirmPasswordController.clear();
-        
+
         context.pushNamed(LoginScreen.name);
       }
     } catch (e) {
@@ -100,14 +90,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Logo
                   Image.asset(
                     'assets/images/logoBueno.png',
                     height: 100,
                     fit: BoxFit.contain,
                   ),
                   
-                  // Título
                   RichText(
                     text: TextSpan(
                       style: Theme.of(context).textTheme.displayLarge?.copyWith(
@@ -150,6 +138,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       if (value.length < 2) {
                         return 'Nombre muy corto';
                       }
+                      // Regex: Solo letras mayúsculas, minúsculas, acentos y espacios
+                      if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(value)) {
+                        return 'Solo se permiten letras';
+                      }
                       return null;
                     },
                   ),
@@ -164,6 +156,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Ingresa tus apellidos';
+                      }
+                      if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(value)) {
+                        return 'Solo se permiten letras';
                       }
                       return null;
                     },
@@ -181,8 +176,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Ingresa tu correo';
                       }
-                      if (!value.contains('@') || !value.contains('.')) {
-                        return 'Ingresa un correo válido';
+                      // Regex oficial estricto para validación de emails
+                      final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                      if (!emailRegex.hasMatch(value)) {
+                        return 'Ingresa un correo electrónico válido';
                       }
                       return null;
                     },
@@ -196,9 +193,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     icon: Icons.phone_iphone_outlined,
                     controller: _telefonoController,
                     keyboardType: TextInputType.phone,
+                    maxLength: 10, // Limita visualmente a 10 caracteres
                     validator: (value) {
-                      if (value != null && value.isNotEmpty && value.length < 8) {
-                        return 'Teléfono inválido';
+                      // Si no está vacío, validamos que sean exactamente 10 números
+                      if (value != null && value.isNotEmpty) {
+                        if (!RegExp(r'^\d{10}$').hasMatch(value)) {
+                          return 'El teléfono debe tener 10 dígitos';
+                        }
                       }
                       return null;
                     },
@@ -206,10 +207,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   
                   const SizedBox(height: 16),
                   
-                  // Contraseña
                   CustomTextField(
                     label: 'Contraseña',
-                    hintText: 'Mínimo 6 caracteres',
+                    hintText: 'Mínimo 8 caracteres, 1 número y 1 mayúscula',
                     icon: Icons.lock_outline,
                     obscureText: true,
                     controller: _passwordController,
@@ -217,8 +217,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Ingresa una contraseña';
                       }
-                      if (value.length < 6) {
-                        return 'La contraseña debe tener al menos 6 caracteres';
+                      if (value.length < 8) {
+                        return 'La contraseña debe tener al menos 8 caracteres';
+                      }
+                      if (!RegExp(r'(?=.*[A-Z])').hasMatch(value)) {
+                        return 'Debe contener al menos una letra mayúscula';
+                      }
+                      if (!RegExp(r'(?=.*[0-9])').hasMatch(value)) {
+                        return 'Debe contener al menos un número';
                       }
                       return null;
                     },
@@ -226,16 +232,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   
                   const SizedBox(height: 16),
                   
-                      // Confirmar Contraseña
-                    CustomTextField(
-                      label: 'Confirmar Contraseña',
-                      hintText: 'Repite tu contraseña',
-                      icon: Icons.lock_outline,
-                      obscureText: true,
+                  CustomTextField(
+                    label: 'Confirmar Contraseña',
+                    hintText: 'Repite tu contraseña',
+                    icon: Icons.lock_outline,
+                    obscureText: true,
                     controller: _confirmPasswordController,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Confirma tu contraseña';
+                      }
+                      // Validación en tiempo real comparando con el controlador principal
+                      if (value != _passwordController.text) {
+                        return 'Las contraseñas no coinciden';
                       }
                       return null;
                     },
@@ -272,7 +281,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     );
   }
-  
+
   @override
   void dispose() {
     _nombresController.dispose();
