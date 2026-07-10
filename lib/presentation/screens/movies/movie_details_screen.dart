@@ -93,8 +93,32 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
         });
       }
     } catch (e) {
-      debugPrint('Error TMDB extra: $e');
+  if (!mounted) return;
+
+  if (e is DioException) {
+    switch (e.type) {
+      case DioExceptionType.badResponse:
+        if (e.response?.statusCode == 404) {
+          context.go('/error-404');
+        } else {
+          context.go('/error-500');
+        }
+        break;
+
+      case DioExceptionType.connectionError:
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.receiveTimeout:
+      case DioExceptionType.sendTimeout:
+        context.go('/no-connection');
+        break;
+
+      default:
+        context.go('/error-500');
     }
+  } else {
+    context.go('/error-500');
+  }
+}
   }
 
   Future<void> _loadReviewsByMovie() async {

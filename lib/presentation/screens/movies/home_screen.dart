@@ -10,7 +10,7 @@ import 'package:dreamers_movies_app_bv/domain/datasources/movie_datasources.dart
 import 'package:dreamers_movies_app_bv/infrastructure/datasources/tmdb_datasource.dart';
 import 'package:dreamers_movies_app_bv/domain/datasources/local_reviews_datasource.dart';
 import 'package:dreamers_movies_app_bv/domain/datasources/database_helper.dart';
-
+import 'package:dio/dio.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_header.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_category_filter.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_section_header.dart';
@@ -112,6 +112,9 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadInitialData();
+    
+    // SABOTAJE TEMPORAL: A los 5 segundos, intentar ir a una ruta que no existe
+    
   }
 
   @override
@@ -158,9 +161,22 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       setState(() => _isLoadingMovies = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al cargar datos: $e')),
-        );
+        // Primero verificamos si es un error 404 de TMDB
+        if (e is DioException && e.response?.statusCode == 404) {
+          context.go('/error-404'); 
+          return; // Salimos de la función
+        }
+
+        // Si no fue 404, checamos si es falta de internet
+        final errorString = e.toString().toLowerCase();
+        if (errorString.contains('failed host lookup') || 
+            errorString.contains('socketexception') || 
+            errorString.contains('connection error')) {
+          context.go('/no-connection');
+        } else {
+          // Si no es internet ni 404, asumimos que es el servidor (500)
+          context.go('/error-500');
+        }
       }
     }
   }
