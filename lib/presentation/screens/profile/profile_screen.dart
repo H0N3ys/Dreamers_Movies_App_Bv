@@ -20,7 +20,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   UserEntity? _currentUser;
   bool _isLoading = true;
   
- 
   int _currentNavIndex = 3; 
 
   @override
@@ -31,7 +30,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadUserProfile() async {
     try {
-   
       final user = await _userRepository.getCurrentUser();
       setState(() {
         _currentUser = user;
@@ -42,9 +40,83 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  
+  Future<void> _executeLogout() async {
+    try {
+      
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear(); // Esto borra el 'is_logged_in' y datos del usuario
+
+      
+      await _userRepository.logout();
+      
+      
+      if (mounted) {
+        context.go('/login'); // Asegúrate de que esta sea la ruta correcta en tu router
+      }
+    } catch (e) {
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cerrar sesión: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  
+  Future<void> _showLogoutConfirmation() async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: AppColors.secondaryColor, // Fondo oscuro para que combine
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+            side: const BorderSide(color: Colors.white12), // Borde sutil
+          ),
+          title: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 28),
+              SizedBox(width: 10),
+              Text('Cerrar sesión', style: TextStyle(color: Colors.white)),
+            ],
+          ),
+          content: const Text(
+            '¿Estás seguro que deseas cerrar tu sesión actual?',
+            style: TextStyle(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false), // Retorna 'false'
+              child: const Text(
+                'Cancelar', 
+                style: TextStyle(color: Colors.white54, fontSize: 16),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true), // Retorna 'true'
+              child: const Text(
+                'Sí, salir', 
+                style: TextStyle(color: Colors.redAccent, fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    
+    if (confirm == true) {
+      await _executeLogout();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    
     final String nombrePrincipal = _currentUser?.nombres ?? 'Usuario';
 
     return Scaffold(
@@ -65,78 +137,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onTap: () {},
                 ),
                 
-               
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 24),
                   child: Divider(color: Colors.white12, height: 1),
                 ),
+              
                 
-                // Perfiles secundarios de demostración
-                ProfileListItem(
-                  title: 'Adrian',
-                  subtitle: 'Perfil secundario',
-                  isSelected: false,
-                  onTap: () {},
-                ),
                 
-                ProfileListItem(
-                  title: 'Saul',
-                  subtitle: 'Modo infantil',
-                  isSelected: false,
-                  onTap: () {},
-                ),
-                
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24),
-                  child: Divider(color: Colors.white12, height: 1),
-                ),
-                
-                // Botón de Agregar
                 ProfileListItem(
                   title: 'Agregar perfil',
                   isAddButton: true,
                   onTap: () {
-                    // Acción para crear nuevo perfil
+                    
                   },
                 ),
                 
                 const Spacer(),
                 
-             
-Center(
-  child: TextButton.icon(
-    onPressed: () async {
-      try {
-        // 1. Limpiamos las preferencias guardadas en el Login
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.clear(); // Esto borra el 'is_logged_in' y datos del usuario
-
-        // 2. Cerramos sesión en el backend (Supabase/Firebase)
-        await _userRepository.logout();
-        
-        // 3. Navegamos de forma segura al Login
-        if (context.mounted) {
-          context.go('/login'); // Asegúrate de que esta sea la ruta correcta en tu router
-        }
-      } catch (e) {
-        // 4. Si algo falla, se lo mostramos al usuario sin que crashee la app
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error al cerrar sesión: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    }, 
-    icon: const Icon(Icons.logout, color: Colors.white54), 
-    label: const Text(
-      'Cerrar sesión', 
-      style: TextStyle(color: Colors.white54),
-    ),
-  ),
-),
+                
+                Center(
+                  child: TextButton.icon(
+                    onPressed: _showLogoutConfirmation, // Llama a la alerta en lugar de cerrar directo
+                    icon: const Icon(Icons.logout, color: Colors.white54), 
+                    label: const Text(
+                      'Cerrar sesión', 
+                      style: TextStyle(color: Colors.white54),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 20),
               ],
             ),

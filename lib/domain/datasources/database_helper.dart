@@ -1,4 +1,3 @@
-// lib/domain/datasources/database_helper.dart
 import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -21,26 +20,25 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDatabase() async {
-    // ✅ SOLO INICIALIZAR FFI EN PLATAFORMAS DE ESCRITORIO
+   
     if (!kIsWeb) {
       try {
         if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
           sqfliteFfiInit();
           databaseFactory = databaseFactoryFfi;
-          print('✅ Inicializado SQLite FFI para escritorio');
+          print(' Inicializado SQLite FFI para escritorio');
         }
       } catch (e) {
-        print('⚠️ Error al inicializar FFI: $e');
+        print(' Error al inicializar FFI: $e');
       }
     } else {
-      print('⚠️ Ejecutando en Web - SQLite en modo memoria');
+      print(' Ejecutando en Web - SQLite en modo memoria');
     }
 
     final directory = await getApplicationDocumentsDirectory();
     final path = join(directory.path, 'cinexa.db');
 
-    print('📁 Base de datos en: $path');
-
+    print(' Base de datos en: $path');
     return await openDatabase(
       path,
       version: 1,
@@ -49,9 +47,7 @@ class DatabaseHelper {
   }
 
   Future<void> _onCreate(Database db, int version) async {
-    print('📦 Creando base de datos...');
-
-    // TABLA USUARIO
+    print(' Creando base de datos...');
     await db.execute('''
       CREATE TABLE usuario (
         id_usuario INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -66,7 +62,6 @@ class DatabaseHelper {
     ''');
     print('✅ Tabla "usuario" creada');
 
-    // TABLA PERFIL
     await db.execute('''
       CREATE TABLE perfil (
         id_perfil INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -80,7 +75,6 @@ class DatabaseHelper {
     ''');
     print('✅ Tabla "perfil" creada');
 
-    // TABLA PELICULA
     await db.execute('''
       CREATE TABLE pelicula (
         id_pelicula INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -97,7 +91,7 @@ class DatabaseHelper {
     ''');
     print('✅ Tabla "pelicula" creada');
 
-    // TABLA RESENA
+    // MODIFICADO: Eliminada la restricción UNIQUE(id_perfil, id_pelicula) para permitir historial de comentarios
     await db.execute('''
       CREATE TABLE resena (
         id_resena INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -107,13 +101,11 @@ class DatabaseHelper {
         comentario TEXT,
         fecha_creacion TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (id_perfil) REFERENCES perfil(id_perfil) ON DELETE CASCADE,
-        FOREIGN KEY (id_pelicula) REFERENCES pelicula(id_pelicula) ON DELETE CASCADE,
-        UNIQUE(id_perfil, id_pelicula)
+        FOREIGN KEY (id_pelicula) REFERENCES pelicula(id_pelicula) ON DELETE CASCADE
       )
     ''');
     print('✅ Tabla "resena" creada');
 
-    // TABLA FAVORITO
     await db.execute('''
       CREATE TABLE favorito (
         id_favorito INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -127,7 +119,6 @@ class DatabaseHelper {
     ''');
     print('✅ Tabla "favorito" creada');
 
-    // DATOS DE EJEMPLO - PELÍCULAS
     await db.execute('''
       INSERT INTO pelicula (titulo, descripcion, duracion_minutos, anio_lanzamiento, genero, caratula_url, activo) VALUES
       ('Inception', 'Un ladrón que roba secretos del subconsciente', 148, 2010, 'Ciencia Ficción', 'inception.jpg', 1),
@@ -141,32 +132,25 @@ class DatabaseHelper {
       ('Forrest Gump', 'La vida de un hombre extraordinario', 142, 1994, 'Drama', 'forrestgump.jpg', 1),
       ('Gladiador', 'Un general romano busca venganza', 155, 2000, 'Acción', 'gladiator.jpg', 1)
     ''');
-    print('✅ 10 películas de ejemplo insertadas');
-
-    print('✅ Base de datos creada exitosamente');
+    print(' 10 películas de ejemplo insertadas');
+    print(' Base de datos creada exitosamente');
   }
 
-  // ============================================
-  // REGISTRO DE USUARIO
-  // ============================================
+ 
   Future<Map<String, dynamic>?> registerUser(Map<String, dynamic> userData) async {
     final db = await database;
-
-    print('📝 Registrando usuario: ${userData['email']}');
+    print(' Registrando usuario: ${userData['email']}');
 
     try {
-      // Verificar si el email ya existe
       final existing = await db.query(
         'usuario',
         where: 'email = ?',
         whereArgs: [userData['email']],
       );
-
       if (existing.isNotEmpty) {
         throw Exception('El email ya está registrado');
       }
 
-      // Insertar usuario
       final userId = await db.insert('usuario', {
         'email': userData['email'],
         'password_hash': userData['password_hash'],
@@ -176,35 +160,29 @@ class DatabaseHelper {
         'fecha_registro': DateTime.now().toIso8601String(),
         'es_activo': 1,
       });
-
       print('✅ Usuario insertado con ID: $userId');
 
-      // Crear perfil por defecto
       await db.insert('perfil', {
         'id_usuario': userId,
         'nombre_perfil': 'Principal',
         'idioma_preferido': 'es',
         'restriccion_infantil': 0,
       });
-
-      print('✅ Perfil creado para usuario ID: $userId');
+      print(' Perfil creado para usuario ID: $userId');
 
       final result = await db.query(
         'usuario',
         where: 'id_usuario = ?',
         whereArgs: [userId],
       );
-
       return result.first;
     } catch (e) {
-      print('❌ Error en registerUser: $e');
+      print(' Error en registerUser: $e');
       rethrow;
     }
   }
 
-  // ============================================
-  // LOGIN DE USUARIO
-  // ============================================
+
   Future<Map<String, dynamic>?> loginUser(String email, String password) async {
     final db = await database;
     try {
@@ -215,14 +193,12 @@ class DatabaseHelper {
       );
       return result.isNotEmpty ? result.first : null;
     } catch (e) {
-      print('❌ Error en loginUser: $e');
+      print(' Error en loginUser: $e');
       rethrow;
     }
   }
 
-  // ============================================
-  // RESEÑAS Y PELÍCULAS
-  // ============================================
+  
   Future<void> saveReviewLocal({
     required int idPerfil,
     required int idPelicula,
@@ -233,13 +209,11 @@ class DatabaseHelper {
     required String comentario,
   }) async {
     final db = await database;
-
     try {
-      // 1. Guardamos la película si no existe (ConflictAlgorithm.ignore evita errores si ya está en la BD)
       await db.insert(
         'pelicula', 
         {
-          'id_pelicula': idPelicula, // Usaremos el ID de TMDB aquí
+          'id_pelicula': idPelicula, 
           'titulo': titulo,
           'descripcion': descripcion,
           'url_archivo': 'N/A',
@@ -249,7 +223,7 @@ class DatabaseHelper {
         conflictAlgorithm: ConflictAlgorithm.ignore,
       );
 
-      // 2. Guardamos la reseña (ConflictAlgorithm.replace actualiza la reseña si el usuario ya había comentado)
+      // MODIFICADO: Cambiado a ConflictAlgorithm.abort para acumular mensajes sin sobreescribir
       await db.insert(
         'resena', 
         {
@@ -259,21 +233,70 @@ class DatabaseHelper {
           'comentario': comentario,
           'fecha_creacion': DateTime.now().toIso8601String(),
         }, 
-        conflictAlgorithm: ConflictAlgorithm.replace,
+        conflictAlgorithm: ConflictAlgorithm.abort,
       );
-
-      print('✅ Reseña guardada localmente para la película: $titulo');
+      print(' Reseña guardada localmente para la película: $titulo');
     } catch (e) {
-      print('❌ Error al guardar la reseña local: $e');
+      print(' Error al guardar la reseña local: $e');
       throw Exception('Error al guardar la reseña: $e');
     }
   }
 
-  // ============================================
-  // UTILIDADES
-  // ============================================
+
   Future<String> getDatabasePath() async {
     final directory = await getApplicationDocumentsDirectory();
     return join(directory.path, 'cinexa.db');
+  }
+
+
+  Future<Map<String, dynamic>?> authOrRegisterWithGoogle({
+    required String email,
+    required String googleId,
+    required String nombres,
+    required String apellidos,
+  }) async {
+    final db = await database;
+    print(' Procesando Google Sign-In para: $email');
+
+    try {
+      final existing = await db.query(
+        'usuario',
+        where: 'email = ? AND es_activo = 1',
+        whereArgs: [email],
+      );
+
+      if (existing.isNotEmpty) {
+        print('✅ Usuario de Google ya registrado. Iniciando sesión...');
+        return existing.first;
+      }
+
+      print('🆕 El usuario no existe. Creando registro local con datos de Google...');
+      final userId = await db.insert('usuario', {
+        'email': email,
+        'password_hash': 'GOOGLE_$googleId',
+        'nombres': nombres,
+        'apellidos': apellidos,
+        'telefono': '',
+        'fecha_registro': DateTime.now().toIso8601String(),
+        'es_activo': 1,
+      });
+
+      await db.insert('perfil', {
+        'id_usuario': userId,
+        'nombre_perfil': 'Principal',
+        'idioma_preferido': 'es',
+        'restriccion_infantil': 0,
+      });
+
+      final result = await db.query(
+        'usuario',
+        where: 'id_usuario = ?',
+        whereArgs: [userId],
+      );
+      return result.first;
+    } catch (e) {
+      print('❌ Error en authOrRegisterWithGoogle: $e');
+      rethrow;
+    }
   }
 }

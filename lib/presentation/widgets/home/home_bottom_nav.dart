@@ -4,19 +4,20 @@ import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
 import 'package:dreamers_movies_app_bv/resources/styles/styles.dart';
 
 class HomeBottomNav extends StatelessWidget {
-  // ¡Ya no necesitamos pedir parámetros! La barra es inteligente ahora.
+  
   const HomeBottomNav({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Leemos la ruta actual para saber qué botón iluminar automáticamente
+    
     final String location = GoRouterState.of(context).uri.toString();
     
     int currentIndex = 0;
     if (location == '/') currentIndex = 0;
     else if (location.startsWith('/search')) currentIndex = 1;
     else if (location.startsWith('/favorites')) currentIndex = 2; // Favoritos
-    else if (location.startsWith('/profile')) currentIndex = 3;
+    else if (location.startsWith('/saved')) currentIndex = 3; // Guardados
+    else if (location.startsWith('/profile')) currentIndex = 4; // Perfil
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
@@ -39,26 +40,33 @@ class HomeBottomNav extends StatelessWidget {
               label: 'Inicio',
               index: 0,
               currentIndex: currentIndex,
-              onTap: (_) => context.go('/'), // Usamos go() para evitar bugs de historial
+              onTap: (_) => context.go('/'), 
             ),
             _NavItem(
               icon: Icons.search_rounded,
-              label: 'Buscar', // Le agregué texto para que tu animación se vea en todos
+              label: 'Buscar', 
               index: 1,
               currentIndex: currentIndex,
               onTap: (_) => context.go('/search'), 
             ),
             _NavItem(
-              icon: Icons.favorite_rounded, // <-- Cambiado a Favoritos
+              icon: Icons.favorite_rounded, 
               label: 'Favoritos',
               index: 2,
               currentIndex: currentIndex,
-              onTap: (_) => context.go('/favorites'), // Ruta de favoritos
+              onTap: (_) => context.go('/favorites'), 
+            ),
+            _NavItem(
+              icon: Icons.bookmark_rounded, // Icono de guardados
+              label: 'Guardados',
+              index: 3,
+              currentIndex: currentIndex,
+              onTap: (_) => context.go('/saved'), 
             ),
             _NavItem(
               icon: Icons.person_outline_rounded,
               label: 'Perfil',
-              index: 3,
+              index: 4,
               currentIndex: currentIndex,
               onTap: (_) => context.go('/profile'), 
             ),

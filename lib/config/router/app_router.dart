@@ -10,6 +10,7 @@ import 'package:dreamers_movies_app_bv/presentation/screens/movies/home_screen.d
 import 'package:dreamers_movies_app_bv/presentation/screens/movies/search_screen.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/profile/profile_screen.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/movies/movie_details_screen.dart';
+import 'package:dreamers_movies_app_bv/presentation/screens/movies/saved_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/splash',
@@ -24,25 +25,21 @@ redirect: (context, state) async {
     final isGoingToSplash = state.matchedLocation == '/splash';
     final isGoingToLocalAuth = state.matchedLocation == '/local-auth';
 
-    // 1. Si NO tiene cuenta, lo forzamos a ir al login (dejando pasar al splash y registro)
     if (!tieneCuenta && !isGoingToLogin && !isGoingToRegister && !isGoingToSplash) {
       return '/login';
     }
 
-    // 2. Si TIENE cuenta, pero la app apenas se abrió (el candado está puesto)
     if (tieneCuenta && !estaDesbloqueado) {
-      // Si intenta ir al Home, lo regresamos al login para que ponga huella o contraseña
       if (!isGoingToLogin && !isGoingToLocalAuth && !isGoingToSplash) {
         return '/login'; 
       }
     }
 
-    // 3. Si TIENE cuenta y YA QUITÓ EL CANDADO, va directo al Home (ya no le mostramos login)
     if (tieneCuenta && estaDesbloqueado && (isGoingToLogin || isGoingToRegister || isGoingToSplash || isGoingToLocalAuth)) {
       return '/';
     }
 
-    return null; // Si todo está en orden, lo deja pasar
+    return null; 
   },
 
   routes: [
@@ -81,11 +78,15 @@ redirect: (context, state) async {
       name: ProfileScreen.name,
       builder: (context, state) => const ProfileScreen(),
     ),
+
+    // En tu app_router.dart, agrega esta ruta:
+
+
     GoRoute(
   path: '/movie-details',
   name: 'movie-details',
   builder: (context, state) {
-    final movie = state.extra as Movie; // Recibimos la película
+    final movie = state.extra as Movie; 
     return MovieDetailsScreen(movie: movie);
   },
 ),
@@ -93,6 +94,12 @@ GoRoute(
   path: '/favorites',
   name: FavoritesScreen.name,
   builder: (context, state) => const FavoritesScreen(),
+),
+
+GoRoute(
+  path: '/saved',
+  name: SavedScreen.name,
+  builder: (context, state) => const SavedScreen(),
 ),
   ],
 );

@@ -1,4 +1,4 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../datasources/database_helper.dart';
@@ -6,6 +6,47 @@ import '../entities/user_entities.dart';
 
 class UserRepository {
   final DatabaseHelper _db = DatabaseHelper();
+  final DatabaseHelper _dbHelper = DatabaseHelper();
+  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email']);
+
+  Future<UserEntity?> loginWithGoogle() async {
+    try {
+      
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      
+      if (googleUser == null) {
+        // El usuario canceló el inicio de sesión
+        return null; 
+      }
+
+      
+      final String email = googleUser.email;
+      final String googleId = googleUser.id;
+      
+      
+      final displayName = googleUser.displayName ?? 'Usuario Google';
+      final nameParts = displayName.split(' ');
+      final String nombres = nameParts.isNotEmpty ? nameParts.first : displayName;
+      final String apellidos = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
+
+      
+      final localUser = await _dbHelper.authOrRegisterWithGoogle(
+        email: email,
+        googleId: googleId,
+        nombres: nombres,
+        apellidos: apellidos,
+      );
+
+      
+      if (localUser == null) return null;
+      return UserEntity.fromJson(localUser);
+
+    } catch (e) {
+      print('❌ Error en UserRepository (Google Sign-In): $e');
+      throw Exception('No se pudo iniciar sesión con Google: $e');
+    }
+  
+  }
 
   Future<UserEntity?> getCurrentUser() async {
       final prefs = await SharedPreferences.getInstance();
@@ -13,7 +54,7 @@ class UserRepository {
 
       if (!isLoggedIn) return null;
 
-      // Recuperamos los datos locales que guardaste en el LoginScreen
+      
       return UserEntity(
         id: prefs.getString('user_id') ?? '',
         email: prefs.getString('user_email') ?? '',
@@ -70,10 +111,23 @@ class UserRepository {
   Future<void> logout() async {
     try {
       print('📝 Cerrando sesión local...');
+      
+      // 1. Borramos la memoria local de SharedPreferences
       final prefs = await SharedPreferences.getInstance();
-      await prefs.clear(); // Solo borramos la memoria local
-      print('✅ Sesión cerrada correctamente');
+      await prefs.clear(); 
+      print('✅ Memoria local SharedPreferences limpia');
+
+      // 2. OBLIGAMOS A GOOGLE A DESCONECTARSE
+      // .disconnect() borra por completo el login del dispositivo para esta app
+      // y obliga a que la próxima vez solicite elegir cuenta obligatoriamente.
+      if (await _googleSignIn.isSignedIn()) {
+        await _googleSignIn.disconnect();
+        print('✅ Conexión con cuenta de Google revocada con éxito');
+      }
+
+      print('✅ Sesión cerrada completamente');
     } catch (e) {
+      print('❌ Error en logout: $e');
       throw Exception('Error al cerrar sesión: $e');
     }
   }
