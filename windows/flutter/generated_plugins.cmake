@@ -5,6 +5,8 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
   local_auth_windows
+  passkeys_windows
+  rive_native
   url_launcher_windows
 )
 

@@ -57,10 +57,14 @@ dependencies:
   # 👇 Google Sign In debe ir aquí, en las dependencias principales
   google_sign_in: ^6.2.1
   country_code_picker: ^3.4.1
-
+  like_button: ^2.0.5
+  flutter_animate: ^4.5.2
+  lottie: ^3.3.3
+  rive: ^0.14.9
 dev_dependencies:
   flutter_test:
     sdk: flutter
+    
   flutter_launcher_icons: ^0.13.1
   flutter_lints: ^6.0.0
 
@@ -70,6 +74,7 @@ flutter:
   assets:
     - assets/images/
     - assets/videos/
+    - assets/animations/
     - .env
 
   fonts:

@@ -17,6 +17,8 @@ import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_section_he
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/movie_card.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_bottom_nav.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_reviews.dart';
+// 🔥 AQUÍ ESTÁ LA IMPORTACIÓN QUE FALTABA 🔥
+import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_banner_carousel.dart';
 
 class HomeScreen extends StatefulWidget {
   static const name = 'home-screen';
@@ -238,100 +240,6 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Widget _buildAnimatedCarousel(List<Movie> movies) {
-    if (movies.isEmpty) return const SizedBox();
-    return CarouselSlider.builder(
-      itemCount: movies.length,
-      options: CarouselOptions(
-        height: 300.0,
-        autoPlay: true,
-        autoPlayInterval: const Duration(seconds: 4),
-        autoPlayAnimationDuration: const Duration(milliseconds: 800),
-        autoPlayCurve: Curves.fastOutSlowIn,
-        enlargeCenterPage: false,
-        viewportFraction: 1.0,
-        enableInfiniteScroll: true,
-      ),
-      itemBuilder: (context, index, realIndex) {
-        final movie = movies[index];
-        bool isHovered = false;
-
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return MouseRegion(
-              onEnter: (_) => setState(() => isHovered = true),
-              onExit: (_) => setState(() => isHovered = false),
-              child: GestureDetector(
-                onTapDown: (_) => setState(() => isHovered = true),
-                onTapUp: (_) {
-                  setState(() => isHovered = false);
-                  context.pushNamed('movie-details', extra: movie).then((_) => _loadDBReviews());
-                },
-                onTapCancel: () => setState(() => isHovered = false),
-                child: AnimatedScale(
-                  scale: isHovered ? 1.02 : 1.0,
-                  duration: const Duration(milliseconds: 250),
-                  curve: Curves.easeOutBack,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    margin: EdgeInsets.zero,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: isHovered ? Colors.white.withAlpha(150) : Colors.transparent,
-                        width: isHovered ? 2.0 : 0.0,
-                      ),
-                      boxShadow: isHovered
-                          ? [
-                              BoxShadow(
-                                color: Colors.black.withAlpha(200),
-                                blurRadius: 20,
-                                spreadRadius: 2,
-                                offset: const Offset(0, 12),
-                              ),
-                              BoxShadow(
-                                color: Colors.white.withAlpha(40),
-                                blurRadius: 15,
-                                spreadRadius: 1,
-                              )
-                            ]
-                          : [
-                              BoxShadow(
-                                color: Colors.black.withAlpha(120),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              )
-                            ],
-                      image: DecorationImage(
-                        image: NetworkImage('https://image.tmdb.org/t/p/w500${movie.backdropPath}'),
-                        fit: BoxFit.cover,
-                        colorFilter: ColorFilter.mode(Colors.black.withAlpha(77), BlendMode.darken),
-                      ),
-                    ),
-                    child: Align(
-                      alignment: Alignment.bottomLeft,
-                      child: Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Text(
-                          movie.title,
-                          style: const TextStyle(
-                            color: Color.fromARGB(255, 255, 255, 255),
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            shadows: [Shadow(color: Colors.black, blurRadius: 4)],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
   Widget _buildMovieRow(List<Movie> movies, {int? activeGenreId}) {
     if (movies.isEmpty) {
       return const SizedBox(
@@ -531,7 +439,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
 
                 const SliverToBoxAdapter(child: SizedBox(height: 10)),
-                SliverToBoxAdapter(child: _buildAnimatedCarousel(_nowPlayingMovies.take(6).toList())),
+                // 🔥 AQUÍ SE USA EL NUEVO COMPONENTE 🔥
+                SliverToBoxAdapter(child: HomeBannerCarousel(movies: _nowPlayingMovies.take(6).toList())),
 
                 const SliverToBoxAdapter(child: SizedBox(height: 24)),
                 const SliverToBoxAdapter(child: HomeSectionHeader(title: 'Explorar')),
