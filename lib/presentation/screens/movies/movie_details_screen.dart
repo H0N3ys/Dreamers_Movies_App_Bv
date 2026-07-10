@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:dio/dio.dart'; 
+import 'package:lottie/lottie.dart'; 
 import 'package:dreamers_movies_app_bv/domain/datasources/database_helper.dart';
 
 import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
@@ -16,7 +17,6 @@ import 'package:dreamers_movies_app_bv/presentation/widgets/shared/save_animatio
 import 'package:dreamers_movies_app_bv/presentation/widgets/shared/save_confirmation_overlay.dart';
 import 'package:like_button/like_button.dart';
 
-// Importamos los widgets creados (Asegúrate de que las rutas sean correctas)
 import 'package:dreamers_movies_app_bv/presentation/widgets/movie_details/movie_cast_widget.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/movie_details/movie_reviews_carousel.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/shared/favorite_confirmation_overlay.dart';
@@ -68,7 +68,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
   }
 
   Future<void> _fetchTmdbExtraDetails() async {
-    const String apiKey = 'f0af9b11b8c5d768dbccadfc7867b396'; // Tu API KEY real
+    const String apiKey = 'f0af9b11b8c5d768dbccadfc7867b396'; 
     try {
       final detailResponse = await _dio.get('https://api.themoviedb.org/3/movie/${widget.movie.id}?api_key=$apiKey&language=es-MX');
       final creditsResponse = await _dio.get('https://api.themoviedb.org/3/movie/${widget.movie.id}/credits?api_key=$apiKey&language=es-MX');
@@ -124,7 +124,6 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
     });
   }
 
-  // --- NUEVA LÓGICA DE FAVORITOS (OVERLAY) ---
   void _showFavoriteOverlay({required bool isBreaking}) {
     OverlayEntry? overlayEntry;
     overlayEntry = OverlayEntry(
@@ -142,7 +141,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
 
     if (_isFavorite) {
       favs.removeWhere((movieStr) => movieStr.contains('"id":${widget.movie.id}'));
-      if (mounted) _showFavoriteOverlay(isBreaking: true); // Muestra corazón roto
+      if (mounted) _showFavoriteOverlay(isBreaking: true); 
     } else {
       final movieData = {
         "id": widget.movie.id,
@@ -153,13 +152,12 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
         "releaseDate": widget.movie.releaseDate.toIso8601String(),
       };
       favs.add(jsonEncode(movieData));
-      if (mounted) _showFavoriteOverlay(isBreaking: false); // Muestra corazón rojo
+      if (mounted) _showFavoriteOverlay(isBreaking: false);
     }
 
     await prefs.setStringList('favorites_list', favs);
     setState(() => _isFavorite = !_isFavorite);
   }
-  // ------------------------------------------
 
   Future<void> _checkIfSaved() async {
     final prefs = await SharedPreferences.getInstance();
@@ -202,6 +200,29 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
     Overlay.of(context).insert(overlayEntry);
   }
 
+  void _showReviewPublishedOverlay() {
+    OverlayEntry? overlayEntry;
+    overlayEntry = OverlayEntry(
+      builder: (context) => Material(
+        color: Colors.black.withOpacity(0.7), 
+        child: Center(
+          child: Lottie.asset(
+            'assets/animations/resena_public.json',
+            width: 250,
+            height: 250,
+            repeat: false,
+            onLoaded: (composition) {
+              Future.delayed(composition.duration, () {
+                overlayEntry?.remove();
+              });
+            },
+          ),
+        ),
+      ),
+    );
+    Overlay.of(context).insert(overlayEntry);
+  }
+
   Future<void> _loadTrailer() async {
     bool isDesktop = false;
     if (!kIsWeb) {
@@ -218,7 +239,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
       if (key != null) {
         _youtubeController = YoutubePlayerController.fromVideoId(
           videoId: key,
-          autoPlay: false,
+          autoPlay: false, // 🔥 AutoPlay apagado a petición
           params: const YoutubePlayerParams(showControls: true, showFullscreenButton: true, mute: false),
         );
         setState(() { _hasTrailer = true; _isLoadingTrailer = false; });
@@ -246,6 +267,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
       await _loadReviewsByMovie();
 
       if (mounted) {
+        _showReviewPublishedOverlay(); 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('¡Tu reseña se ha guardado!'), backgroundColor: Colors.green),
         );
@@ -265,6 +287,16 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
     };
     final names = widget.movie.genreIds.map((id) => genres[id]).where((name) => name != null).cast<String>();
     return names.isEmpty ? 'Desconocido' : names.join(', ');
+  }
+
+  String _formatRuntime(int? minutes) {
+    if (minutes == null || minutes <= 0) return 'N/A';
+    final int hours = minutes ~/ 60;
+    final int mins = minutes % 60;
+    if (hours > 0) {
+      return '${hours}h ${mins}m';
+    }
+    return '${mins}m';
   }
 
   void _showReviewModal() {
@@ -348,7 +380,11 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
 
   Widget _buildMediaHeader() {
     if (_isLoadingTrailer) return const Center(child: CircularProgressIndicator(color: Colors.white));
-    if (_hasTrailer && _youtubeController != null) return YoutubePlayer(controller: _youtubeController!);
+    
+    if (_hasTrailer && _youtubeController != null) {
+      return YoutubePlayer(controller: _youtubeController!);
+    }
+    
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -357,16 +393,27 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
           fit: BoxFit.cover,
           errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.movie_outlined, color: Colors.white24, size: 50)),
         ),
-        Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter, end: Alignment.bottomCenter,
-              colors: [Colors.transparent, Colors.black.withOpacity(0.8), Colors.black],
-            ),
-          ),
-        ),
-        const Center(child: Text('Trailer no disponible', style: TextStyle(color: Colors.white54, fontWeight: FontWeight.bold))),
       ],
+    );
+  }
+
+  Widget _buildInfoStat(String label, String value) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.5),
+          ),
+        ],
+      ),
     );
   }
 
@@ -374,142 +421,190 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
+      // Usamos SafeArea solo para proteger el contenido del Notch/Status Bar superior
       body: SafeArea(
         bottom: false,
         child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
           slivers: [
+            // 🔥 AQUÍ ESTÁ EL ESPACIO FIJO DEDICADO SOLO PARA EL BOTÓN 🔥
             SliverAppBar(
               pinned: true,
               backgroundColor: Colors.black,
               elevation: 0,
-              automaticallyImplyLeading: false,
-              leading: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: GestureDetector(
-                  onTap: () {
-                    if (context.canPop()) context.pop();
-                    else context.go('/');
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), shape: BoxShape.circle),
-                    child: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
-                  ),
-                ),
+              automaticallyImplyLeading: false, // Quitamos el automático para poner el nuestro
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
+                onPressed: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go('/');
+                  }
+                },
               ),
-              actions: [
-                // 🔥 FAVORITOS EN EL APPBAR 🔥
-                Padding(
-                  padding: const EdgeInsets.only(right: 20.0), // Separado de la derecha
-                  child: LikeButton(
-                    size: 28,
-                    isLiked: _isFavorite,
-                    circleColor: const CircleColor(start: Colors.redAccent, end: Colors.red),
-                    bubblesColor: const BubblesColor(dotPrimaryColor: Colors.red, dotSecondaryColor: Colors.white),
-                    likeBuilder: (bool isLiked) {
-                      return Icon(
-                        isLiked ? Icons.favorite : Icons.favorite_border,
-                        color: isLiked ? Colors.red : Colors.white54,
-                        size: 28,
-                      );
-                    },
-                    onTap: (bool isLiked) async {
-                      await _toggleFavorite();
-                      return !isLiked;
-                    },
-                  ),
-                ),
-              ],
             ),
+
+            // TODO EL CONTENIDO (VIDEO Y TARJETA)
             SliverToBoxAdapter(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(height: 230, width: double.infinity, child: _buildMediaHeader()),
+                  // LA CABECERA (TRÁILER O IMAGEN)
+                  SizedBox(
+                    height: 380, // Altura inmersiva 
+                    width: double.infinity,
+                    child: _buildMediaHeader(),
+                  ),
+
+                  // LA TARJETA DE INFORMACIÓN 
+                  Container(
+                    margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    padding: const EdgeInsets.all(22),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E1E2C), 
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 20, offset: const Offset(0, 10))
+                      ],
+                      border: Border.all(color: Colors.white.withOpacity(0.05)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                widget.movie.title,
+                                style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, height: 1.2),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            
+                            // BOTÓN ME GUSTA (CORAZÓN)
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: LikeButton(
+                                size: 26,
+                                isLiked: _isFavorite,
+                                circleColor: const CircleColor(start: Colors.redAccent, end: Colors.red),
+                                bubblesColor: const BubblesColor(dotPrimaryColor: Colors.red, dotSecondaryColor: Colors.white),
+                                likeBuilder: (bool isLiked) {
+                                  return Icon(
+                                    isLiked ? Icons.favorite : Icons.favorite_border,
+                                    color: isLiked ? Colors.red : Colors.white,
+                                    size: 26,
+                                  );
+                                },
+                                onTap: (bool isLiked) async {
+                                  await _toggleFavorite();
+                                  return !isLiked;
+                                },
+                              ),
+                            ),
+                            
+                            const SizedBox(width: 8),
+                            
+                            // BOTÓN GUARDAR (BANDERA BLANCA)
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: SaveAnimationWidget(
+                                isSaved: _isSaved, 
+                                onTap: _toggleSave, 
+                                size: 26, 
+                                activeColor: Colors.amber, 
+                                inactiveColor: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        // IMDb y Géneros
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(color: Colors.amber, borderRadius: BorderRadius.circular(6)),
+                              child: Text(
+                                "IMDb ${widget.movie.voteAverage.toStringAsFixed(1)}",
+                                style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 12),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(_getGenreName(), style: const TextStyle(color: Colors.white70, fontSize: 13), overflow: TextOverflow.ellipsis),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Fila de Estadísticas
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Row(
+                            children: [
+                              _buildInfoStat('AÑO', widget.movie.releaseDate.year.toString()),
+                              Container(width: 1, height: 30, color: Colors.white12),
+                              _buildInfoStat('DURACIÓN', _formatRuntime(_runtime)), 
+                              Container(width: 1, height: 30, color: Colors.white12),
+                              _buildInfoStat('DIRECTOR', _director),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // RESTO DEL CONTENIDO
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const SizedBox(height: 20),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                widget.movie.title,
-                                style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            // 🔥 GUARDADOS BAJÓ AL LADO DEL TÍTULO 🔥
-                            SaveAnimationWidget(
-                              isSaved: _isSaved, 
-                              onTap: _toggleSave, 
-                              size: 32, 
-                              activeColor: Colors.amber, 
-                              inactiveColor: Colors.white54
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Text(widget.movie.releaseDate.year.toString(), style: const TextStyle(color: Colors.white54)),
-                            const SizedBox(width: 12),
-                            Expanded(child: Text(_getGenreName(), style: const TextStyle(color: Colors.white54), overflow: TextOverflow.ellipsis)),
-                            const SizedBox(width: 12),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                              decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(4)),
-                              child: const Text('HD', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                            ),
-                            const SizedBox(width: 12),
-                            const Icon(Icons.star, color: Colors.amber, size: 16),
-                            const SizedBox(width: 4),
-                            Text(widget.movie.voteAverage.toStringAsFixed(1), style: const TextStyle(color: Colors.white)),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(Icons.access_time, color: Colors.white54, size: 16),
-                            const SizedBox(width: 4),
-                            Text(_runtime != null ? '$_runtime min' : 'N/A', style: const TextStyle(color: Colors.white54)),
-                            const SizedBox(width: 16),
-                            const Icon(Icons.movie_creation_outlined, color: Colors.white54, size: 16),
-                            const SizedBox(width: 4),
-                            Expanded(child: Text('Dir: $_director', style: const TextStyle(color: Colors.white54), overflow: TextOverflow.ellipsis)),
-                          ],
-                        ),
-                        
-                        // ELIMINADO EL BOTÓN DE PLAY AQUÍ
                         const SizedBox(height: 24),
-
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton.icon(
                             onPressed: _showReviewModal,
                             icon: const Icon(Icons.rate_review, color: Colors.white),
                             label: const Text('Dejar una reseña', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.white24, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white12,
+                              padding: const EdgeInsets.symmetric(vertical: 16), 
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 28),
                         const Text('Sinopsis', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 12),
                         Text(widget.movie.overview.isEmpty ? 'No hay descripción disponible para esta película.' : widget.movie.overview, style: const TextStyle(color: Colors.white70, height: 1.5)),
                         
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 28),
                         const Text('Reparto Principal', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 16),
                         MovieCastWidget(cast: _cast),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 28),
                         Text('Reseñas de la película (${_movieReviews.length})', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 16),
                         MovieReviewsCarousel(reviews: _movieReviews),
 
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 50),
                       ],
                     ),
                   ),

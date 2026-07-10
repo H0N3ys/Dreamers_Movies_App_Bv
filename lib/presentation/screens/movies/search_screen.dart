@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
 
 class SearchScreen extends StatefulWidget {
-  // 🔥 ESTA ES LA LÍNEA QUE EL GO ROUTER ESTABA BUSCANDO 🔥
   static const name = 'search-screen';
 
   const SearchScreen({super.key});
