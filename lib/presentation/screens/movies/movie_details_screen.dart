@@ -1,3 +1,4 @@
+// movie_details_screen.dart (actualizado con la nueva lógica)
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:convert';
@@ -16,7 +17,7 @@ import 'package:dreamers_movies_app_bv/presentation/widgets/shared/save_animatio
 import 'package:dreamers_movies_app_bv/presentation/widgets/shared/save_confirmation_overlay.dart';
 import 'package:like_button/like_button.dart';
 
-// Importamos los widgets creados (Asegúrate de que las rutas sean correctas)
+// Importamos los widgets creados
 import 'package:dreamers_movies_app_bv/presentation/widgets/movie_details/movie_cast_widget.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/movie_details/movie_reviews_carousel.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/shared/favorite_confirmation_overlay.dart';
@@ -68,7 +69,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
   }
 
   Future<void> _fetchTmdbExtraDetails() async {
-    const String apiKey = 'f0af9b11b8c5d768dbccadfc7867b396'; // Tu API KEY real
+    const String apiKey = 'f0af9b11b8c5d768dbccadfc7867b396';
     try {
       final detailResponse = await _dio.get('https://api.themoviedb.org/3/movie/${widget.movie.id}?api_key=$apiKey&language=es-MX');
       final creditsResponse = await _dio.get('https://api.themoviedb.org/3/movie/${widget.movie.id}/credits?api_key=$apiKey&language=es-MX');
@@ -124,7 +125,6 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
     });
   }
 
-  // --- NUEVA LÓGICA DE FAVORITOS (OVERLAY) ---
   void _showFavoriteOverlay({required bool isBreaking}) {
     OverlayEntry? overlayEntry;
     overlayEntry = OverlayEntry(
@@ -142,7 +142,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
 
     if (_isFavorite) {
       favs.removeWhere((movieStr) => movieStr.contains('"id":${widget.movie.id}'));
-      if (mounted) _showFavoriteOverlay(isBreaking: true); // Muestra corazón roto
+      if (mounted) _showFavoriteOverlay(isBreaking: true);
     } else {
       final movieData = {
         "id": widget.movie.id,
@@ -153,13 +153,12 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
         "releaseDate": widget.movie.releaseDate.toIso8601String(),
       };
       favs.add(jsonEncode(movieData));
-      if (mounted) _showFavoriteOverlay(isBreaking: false); // Muestra corazón rojo
+      if (mounted) _showFavoriteOverlay(isBreaking: false);
     }
 
     await prefs.setStringList('favorites_list', favs);
     setState(() => _isFavorite = !_isFavorite);
   }
-  // ------------------------------------------
 
   Future<void> _checkIfSaved() async {
     final prefs = await SharedPreferences.getInstance();
@@ -169,15 +168,21 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
     });
   }
 
+  // --- NUEVA LÓGICA DE GUARDADO CON OVERLAY MEJORADO ---
   Future<void> _toggleSave() async {
     final prefs = await SharedPreferences.getInstance();
     final List<String> savedJson = prefs.getStringList('saved_list') ?? [];
 
     if (_isSaved) {
+      // Quitar guardado
       savedJson.removeWhere((str) => jsonDecode(str)['id'] == widget.movie.id);
       await prefs.setStringList('saved_list', savedJson);
       setState(() => _isSaved = false);
+      
+      // Mostrar overlay de "removido"
+      if (mounted) _showSaveConfirmationOverlay(isSaving: false);
     } else {
+      // Guardar
       final movieData = {
         "id": widget.movie.id,
         "title": widget.movie.title,
@@ -190,17 +195,22 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
       await prefs.setStringList('saved_list', savedJson);
       setState(() => _isSaved = true);
 
-      if (mounted) _showSaveConfirmationOverlay();
+      // Mostrar overlay de "guardado"
+      if (mounted) _showSaveConfirmationOverlay(isSaving: true);
     }
   }
 
-  void _showSaveConfirmationOverlay() {
+  void _showSaveConfirmationOverlay({bool isSaving = true}) {
     OverlayEntry? overlayEntry;
     overlayEntry = OverlayEntry(
-      builder: (context) => SaveConfirmationOverlay(onComplete: () => overlayEntry?.remove()),
+      builder: (context) => SaveConfirmationOverlay(
+        isSaving: isSaving,
+        onComplete: () => overlayEntry?.remove(),
+      ),
     );
     Overlay.of(context).insert(overlayEntry);
   }
+  // ------------------------------------------
 
   Future<void> _loadTrailer() async {
     bool isDesktop = false;
@@ -397,7 +407,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                 ),
               ),
               actions: [
-                // 🔥 FAVORITOS EN EL APPBAR 🔥
+                // FAVORITOS EN EL APPBAR
                 Padding(
                   padding: const EdgeInsets.only(right: 8.0),
                   child: LikeButton(
@@ -418,7 +428,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                     },
                   ),
                 ),
-                // 🔥 GUARDADOS EN EL APPBAR 🔥
+                // GUARDADOS EN EL APPBAR
                 Padding(
                   padding: const EdgeInsets.only(right: 16.0),
                   child: SaveAnimationWidget(
@@ -452,15 +462,6 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                                 style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
                               ),
                             ),
-                            // 🔥 GUARDADOS BAJO EL TÍTULO (opcional, ya está en AppBar) 🔥
-                            // Si quieres mantenerlo aquí también, descomenta:
-                            // SaveAnimationWidget(
-                            //   isSaved: _isSaved, 
-                            //   onTap: _toggleSave, 
-                            //   size: 32, 
-                            //   activeColor: Colors.amber, 
-                            //   inactiveColor: Colors.white54
-                            // ),
                           ],
                         ),
                         const SizedBox(height: 8),
