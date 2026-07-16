@@ -19,6 +19,7 @@ import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_bottom_nav
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_reviews.dart';
 // 🔥 AQUÍ ESTÁ LA IMPORTACIÓN QUE FALTABA 🔥
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_banner_carousel.dart';
+import 'package:dreamers_movies_app_bv/presentation/widgets/shared/app_refresh_indicator.dart';
 
 class HomeScreen extends StatefulWidget {
   static const name = 'home-screen';
@@ -113,7 +114,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadInitialData();
     
-    // SABOTAJE TEMPORAL: A los 5 segundos, intentar ir a una ruta que no existe
+    // SABOTAJE TEMPORAL
     
   }
 
@@ -179,6 +180,13 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
     }
+  }
+
+  /// Recarga todos los datos de la Home (películas + reseñas locales).
+  /// Este es el callback que dispara el pull-to-refresh.
+  Future<void> _handlePullToRefresh() async {
+    await _loadInitialData();
+    await _loadDBReviews();
   }
 
   Future<void> _loadStaticReviews() async {
@@ -433,8 +441,15 @@ class _HomeScreenState extends State<HomeScreen> {
       extendBody: true,
       body: _isLoadingMovies
           ? const Center(child: CircularProgressIndicator(color: Colors.white))
-          : CustomScrollView(
-              physics: const BouncingScrollPhysics(),
+          : AppRefreshIndicator(
+              onRefresh: _handlePullToRefresh,
+              child: CustomScrollView(
+              // AlwaysScrollableScrollPhysics es necesario para que el
+              // pull-to-refresh funcione incluso si el contenido no llena
+              // toda la pantalla (poco contenido / pantallas grandes).
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
+              ),
               slivers: [
                 SliverAppBar(
                   pinned: true,
@@ -536,6 +551,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SliverToBoxAdapter(child: SizedBox(height: 100)),
               ],
+              ),
             ),
       bottomNavigationBar: const HomeBottomNav(),
     );

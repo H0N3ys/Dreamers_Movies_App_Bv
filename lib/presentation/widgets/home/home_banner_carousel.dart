@@ -16,16 +16,17 @@ class HomeBannerCarousel extends StatefulWidget {
 class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
   int _currentIndex = 0;
 
-  String _getGenres(List<int> genreIds) {
-    if (genreIds.isEmpty) return 'Película';
+  // Helper que devuelve la lista de géneros
+  List<String> _getGenresList(List<int> genreIds) {
+    if (genreIds.isEmpty) return ['Película'];
     final genres = {
       28: "Acción", 12: "Aventura", 16: "Animación", 35: "Comedia", 80: "Crimen",
       99: "Documental", 18: "Drama", 10751: "Familia", 14: "Fantasía", 36: "Historia",
       27: "Terror", 10402: "Música", 9648: "Misterio", 10749: "Romance", 878: "Ciencia Ficción",
       10770: "Película de TV", 53: "Suspense", 10752: "Bélica", 37: "Western",
     };
-    final names = genreIds.map((id) => genres[id]).where((name) => name != null).cast<String>().take(3);
-    return names.isEmpty ? 'Película' : names.join(' • ');
+    final names = genreIds.map((id) => genres[id]).whereType<String>().take(3).toList();
+    return names.isEmpty ? ['Película'] : names;
   }
 
   @override
@@ -33,30 +34,99 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
     if (widget.movies.isEmpty) return const SizedBox.shrink();
 
     final activeMovie = widget.movies[_currentIndex];
+    
+    // 🔥 Calculamos el ancho exacto del carrusel (75% de la pantalla)
+    final double carouselWidth = MediaQuery.of(context).size.width * 0.75;
 
-    return Container(
-      // ⬇️⬇️⬇️ AQUÍ MODIFICAS LA ANCHURA DEL CONTENEDOR TRANSPARENTE ⬇️⬇️⬇️
-      // "horizontal: 0" hace que el fondo abarque el 100% de la pantalla.
-      // Si quieres que se despegue de los bordes del celular, súbelo a 4, 8 o 10.
-      margin: const EdgeInsets.symmetric(horizontal: 12), 
-      // ⬆️⬆️⬆️ ============================================================ ⬆️⬆️⬆️
-
-      padding: const EdgeInsets.only(top: 25, bottom: 20),
-      decoration: BoxDecoration(
-        
-        // ⬇️⬇️⬇️ AQUÍ MODIFICAS EL COLOR Y LA TRANSPARENCIA DEL CONTENEDOR ⬇️⬇️⬇️
-        // Colors.black define el color (puedes cambiarlo a Colors.blue.shade900, por ejemplo).
-        // .withOpacity(0.3) es la transparencia (0.0 es invisible, 1.0 es color sólido).
-        color: const Color.fromARGB(255, 4, 12, 74).withOpacity(0.0),
-
-        // ⬆️⬆️⬆️ ============================================================== ⬆️⬆️⬆️
-
-        // Si el margin es 0, tal vez quieras bajar este 35 a 15 para que no sea tan curvo en los extremos.
-        borderRadius: BorderRadius.circular(15), 
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(top: 15, bottom: 10),
       child: Column(
         children: [
-          // EL CARRUSEL
+          // =========================================================
+          // 1. INFORMACIÓN SUPERIOR (Limitada al ancho de la película)
+          // =========================================================
+          SizedBox(
+            width: carouselWidth, // 🔥 Esto "ancla" el texto a la imagen
+            child: Column(
+              children: [
+                // TÍTULO
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: Text(
+                    activeMovie.title,
+                    key: ValueKey("title_${activeMovie.id}"),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: AppTheme.secondaryFont,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 26,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(height: 12),
+
+                // ETIQUETA IMDB Y GÉNEROS (Usando Wrap por si ocupan 2 líneas)
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: Wrap(
+                    key: ValueKey("info_${activeMovie.id}"),
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8, // Espacio horizontal
+                    runSpacing: 8, // Espacio vertical si bajan de línea
+                    children: [
+                      // Contenedor IMDb
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.amber,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          "IMDb ${activeMovie.voteAverage.toStringAsFixed(1)}",
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      
+                      // Pastillas de géneros
+                      ..._getGenresList(activeMovie.genreIds).map((genre) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.white54, width: 1.0),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            genre,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // =========================================================
+          // 2. EL CARRUSEL (CON EFECTO 3D Y FILTRO OSCURO)
+          // =========================================================
           CarouselSlider.builder(
             itemCount: widget.movies.length,
             options: CarouselOptions(
@@ -67,15 +137,8 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
               autoPlayCurve: Curves.fastOutSlowIn,
               enlargeCenterPage: true,
               enlargeStrategy: CenterPageEnlargeStrategy.zoom, 
-              enlargeFactor: 0.22, // Ajusta qué tan "atrás" se ven las cartas secundarias
-              
-              // ⬇️⬇️⬇️ AQUÍ MODIFICAS LA ANCHURA DE LAS PELÍCULAS ⬇️⬇️⬇️
-              // viewportFraction determina el % de pantalla que ocupa la carta.
-              // Lo subí de 0.65 a 0.75 para que la película principal se vea mucho más ancha.
-              // Si le pones 0.85 se hará gigantesca.
-              viewportFraction: 0.75, 
-              // ⬆️⬆️⬆️ ================================================= ⬆️⬆️⬆️
-              
+              enlargeFactor: 0.35, // Profundidad 3D extrema
+              viewportFraction: 0.75, // Mismo 75% del SizedBox superior
               enableInfiniteScroll: true,
               onPageChanged: (index, reason) {
                 setState(() {
@@ -93,34 +156,47 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
 
               return GestureDetector(
                 onTap: () => context.pushNamed('movie-details', extra: movie),
-                child: Container(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 400),
                   margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 10),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10), // Borde mantenido en 10
+                    borderRadius: BorderRadius.circular(15), 
                     boxShadow: isActive
                         ? [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.7),
+                              color: Colors.white.withOpacity(0.1),
+                              blurRadius: 30,
+                              spreadRadius: 5,
+                            ),
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.8),
                               blurRadius: 20,
-                              spreadRadius: 2,
                               offset: const Offset(0, 10),
                             )
                           ]
                         : [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.4),
-                              blurRadius: 10,
-                              offset: const Offset(0, 5),
+                              color: Colors.black.withOpacity(0.95),
+                              blurRadius: 25,
+                              spreadRadius: 2,
+                              offset: const Offset(0, 15),
                             )
                           ],
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.network(
-                      imageUrl,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      errorBuilder: (_, __, ___) => Container(color: Colors.grey.shade900),
+                    borderRadius: BorderRadius.circular(15),
+                    child: ColorFiltered(
+                      // Filtro mágico que oscurece un 60% a las películas del fondo
+                      colorFilter: ColorFilter.mode(
+                        Colors.black.withOpacity(isActive ? 0.0 : 0.6), 
+                        BlendMode.darken,
+                      ),
+                      child: Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorBuilder: (_, __, ___) => Container(color: Colors.grey.shade900),
+                      ),
                     ),
                   ),
                 ),
@@ -128,70 +204,11 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
             },
           ),
           
-          const SizedBox(height: 20),
-
-          // TÍTULO DE LA PELÍCULA
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: Text(
-                activeMovie.title,
-                key: ValueKey("title_${activeMovie.id}"),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontFamily: AppTheme.secondaryFont,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 22,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ),
-          ),
-          
-          const SizedBox(height: 12),
-
-          // ETIQUETA IMDB Y GÉNEROS
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: Row(
-              key: ValueKey("info_${activeMovie.id}"),
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.amber,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    "IMDb ${activeMovie.voteAverage.toStringAsFixed(1)}",
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  _getGenres(activeMovie.genreIds),
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
           const SizedBox(height: 24),
 
-          // INDICADORES (DOTS)
+          // =========================================================
+          // 3. INDICADORES (DOTS) EN LA PARTE INFERIOR
+          // =========================================================
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(

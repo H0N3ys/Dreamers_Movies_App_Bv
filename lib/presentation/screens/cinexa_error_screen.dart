@@ -29,25 +29,25 @@ class _CinexaErrorScreenState extends State<CinexaErrorScreen> {
   @override
   void initState() {
     super.initState();
-    // Iniciamos un temporizador que se ejecuta cada 3 segundos
-    _retryTimer = Timer.periodic(const Duration(seconds: 3), (_) {
-      _checkStatusAndReturn();
-    });
+
+    if (widget.errorType == CinexaErrorType.noConnection) {
+      _retryTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+        _checkStatusAndReturn();
+      });
+    }
   }
 
   @override
   void dispose() {
-    _retryTimer?.cancel(); // Limpiamos el timer al salir
+    _retryTimer?.cancel();
     super.dispose();
   }
 
   Future<void> _checkStatusAndReturn() async {
-    if (_isChecking) return; // Evitamos hacer peticiones dobles
+    if (_isChecking) return;
     _isChecking = true;
 
     try {
-      // Hacemos un ping rápido a un sitio muy estable (Google) 
-      // para saber si ya regresó el internet.
       final response = await _dio.get(
         'https://google.com',
         options: Options(
@@ -57,17 +57,14 @@ class _CinexaErrorScreenState extends State<CinexaErrorScreen> {
       );
 
       if (response.statusCode == 200) {
-        // ¡Ya hay internet o el problema se solucionó!
         _retryTimer?.cancel();
+
         if (mounted) {
-          // context.go('/') reemplaza la pila de navegación, 
-          // obligando a la app a recargar el Home desde cero.
-          context.go('/'); 
+          context.go('/');
         }
       }
-    } catch (e) {
-      // Si sigue fallando, no hacemos nada. 
-      // El temporizador lo volverá a intentar en 3 segundos.
+    } catch (_) {
+      // Sigue sin conexión
     } finally {
       _isChecking = false;
     }
@@ -75,65 +72,131 @@ class _CinexaErrorScreenState extends State<CinexaErrorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // PopScope es el widget mágico que bloquea el botón de "atrás" del celular
-    return PopScope(
-      canPop: false, 
-      child: Scaffold(
-        backgroundColor: AppColors.secondaryColor,
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CinexaAnimatedLogo(errorType: widget.errorType, size: 160),
-                
-                const SizedBox(height: 40),
-                
-                Text(
-                  widget.title,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                
-                const SizedBox(height: 16),
-                
-                Text(
-                  widget.message,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 16,
-                  ),
-                ),
-                
-                const SizedBox(height: 48),
+    String bigText;
+    
+    // Utilizamos el color azul de tu clase global
+    Color accentColor = AppColors.secondaryColor;
 
-                // Un indicador visual para que el usuario sepa que la app 
-                // está intentando reconectar automáticamente
-                const Row(
+    switch (widget.errorType) {
+      case CinexaErrorType.notFound404:
+        bigText = "404";
+        break;
+
+      case CinexaErrorType.server500:
+        bigText = "500"; 
+        break;
+
+      case CinexaErrorType.noConnection:
+        bigText = "OFF";
+        break;
+    }
+
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFF202020),
+                Color(0xFF101010),
+                Colors.black,
+              ],
+            ),
+          ),
+          child: SafeArea(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 28),
+                child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    SizedBox(
-                      height: 20, 
-                      width: 20, 
-                      child: CircularProgressIndicator(
-                        color: Colors.amber, 
-                        strokeWidth: 2
-                      )
+
+                    /// Número gigante de fondo
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        
+                        // FittedBox previene que el texto se deforme en pantallas pequeñas
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            bigText,
+                            style: TextStyle(
+                              fontSize: 180,
+                              fontWeight: FontWeight.w900,
+                              // AUMENTAMOS LA OPACIDAD DE .08 a .30 PARA QUE SEA MÁS VISIBLE
+                              color: accentColor.withOpacity(0.3),
+                              letterSpacing: 10,
+                            ),
+                          ),
+                        ),
+
+                        CinexaAnimatedLogo(
+                          errorType: widget.errorType,
+                          size: 170,
+                        ),
+                      ],
                     ),
-                    SizedBox(width: 12),
+
+                    const SizedBox(height: 35),
+
                     Text(
-                      'Reconectando...',
-                      style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold),
+                      widget.title,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1,
+                      ),
                     ),
+
+                    const SizedBox(height: 18),
+
+                    Text(
+                      widget.message,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 17,
+                        height: 1.6,
+                      ),
+                    ),
+
+                    const SizedBox(height: 55),
+
+                    if (widget.errorType == CinexaErrorType.noConnection)
+                      Column(
+                        children: [
+                          SizedBox(
+                            width: 30,
+                            height: 30,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: accentColor, 
+                            ),
+                          ),
+
+                          const SizedBox(height: 18),
+
+                          Text(
+                            "Reconectando...",
+                            style: TextStyle(
+                              color: accentColor, 
+                              fontWeight: FontWeight.bold,
+                              fontSize: 17,
+                            ),
+                          ),
+                        ],
+                      ),
                   ],
-                )
-              ],
+                ),
+              ),
             ),
           ),
         ),

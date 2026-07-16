@@ -131,7 +131,7 @@ final appRouter = GoRouter(
       builder: (context, state) => const CinexaErrorScreen(
         errorType: CinexaErrorType.server500,
         title: 'Error del servidor',
-        message: 'Nuestro proyector se atascó. Estamos trabajando para solucionarlo pronto.',
+        message: 'Nuestro proyecto se atascó. Estamos trabajando para solucionarlo pronto.',
       ),
     ),
   ],
