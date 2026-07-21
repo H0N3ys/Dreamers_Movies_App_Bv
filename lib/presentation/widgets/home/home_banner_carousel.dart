@@ -1,3 +1,4 @@
+import 'dart:ui'; // 🔥 IMPORTANTE: Necesario para el efecto de desenfoque (blur)
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -33,112 +34,25 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
   Widget build(BuildContext context) {
     if (widget.movies.isEmpty) return const SizedBox.shrink();
 
-    final activeMovie = widget.movies[_currentIndex];
-    
-    // 🔥 Calculamos el ancho exacto del carrusel (75% de la pantalla)
-    final double carouselWidth = MediaQuery.of(context).size.width * 0.75;
-
     return Padding(
       padding: const EdgeInsets.only(top: 15, bottom: 10),
       child: Column(
         children: [
           // =========================================================
-          // 1. INFORMACIÓN SUPERIOR (Limitada al ancho de la película)
-          // =========================================================
-          SizedBox(
-            width: carouselWidth, // 🔥 Esto "ancla" el texto a la imagen
-            child: Column(
-              children: [
-                // TÍTULO
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  child: Text(
-                    activeMovie.title,
-                    key: ValueKey("title_${activeMovie.id}"),
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontFamily: AppTheme.secondaryFont,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 26,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                
-                const SizedBox(height: 12),
-
-                // ETIQUETA IMDB Y GÉNEROS (Usando Wrap por si ocupan 2 líneas)
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  child: Wrap(
-                    key: ValueKey("info_${activeMovie.id}"),
-                    alignment: WrapAlignment.center,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 8, // Espacio horizontal
-                    runSpacing: 8, // Espacio vertical si bajan de línea
-                    children: [
-                      // Contenedor IMDb
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.amber,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          "IMDb ${activeMovie.voteAverage.toStringAsFixed(1)}",
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                      
-                      // Pastillas de géneros
-                      ..._getGenresList(activeMovie.genreIds).map((genre) {
-                        return Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.white54, width: 1.0),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            genre,
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        );
-                      }),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // =========================================================
-          // 2. EL CARRUSEL (CON EFECTO 3D Y FILTRO OSCURO)
+          // 1. EL CARRUSEL (CON EFECTO 3D, PUNTUACIÓN Y GÉNEROS INTEGRADOS)
           // =========================================================
           CarouselSlider.builder(
             itemCount: widget.movies.length,
             options: CarouselOptions(
-              height: 380.0,
+              height: 400.0, // 🔥 Aumenté un poco la altura para lucir mejor el póster
               autoPlay: true, 
               autoPlayInterval: const Duration(seconds: 4),
               autoPlayAnimationDuration: const Duration(milliseconds: 800),
               autoPlayCurve: Curves.fastOutSlowIn,
               enlargeCenterPage: true,
               enlargeStrategy: CenterPageEnlargeStrategy.zoom, 
-              enlargeFactor: 0.35, // Profundidad 3D extrema
-              viewportFraction: 0.75, // Mismo 75% del SizedBox superior
+              enlargeFactor: 0.35, 
+              viewportFraction: 0.75, 
               enableInfiniteScroll: true,
               onPageChanged: (index, reason) {
                 setState(() {
@@ -185,18 +99,96 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(15),
-                    child: ColorFiltered(
-                      // Filtro mágico que oscurece un 60% a las películas del fondo
-                      colorFilter: ColorFilter.mode(
-                        Colors.black.withOpacity(isActive ? 0.0 : 0.6), 
-                        BlendMode.darken,
-                      ),
-                      child: Image.network(
-                        imageUrl,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        errorBuilder: (_, __, ___) => Container(color: Colors.grey.shade900),
-                      ),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        // 1. Imagen de fondo original con su filtro para los inactivos
+                        ColorFiltered(
+                          colorFilter: ColorFilter.mode(
+                            Colors.black.withOpacity(isActive ? 0.0 : 0.6), 
+                            BlendMode.darken,
+                          ),
+                          child: Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(color: Colors.grey.shade900),
+                          ),
+                        ),
+                        
+                        // 🔥 2. Puntuación (Esquina superior derecha) - Solo se muestra en la peli central
+                        if (isActive)
+                          Positioned(
+                            top: 12,
+                            right: 12,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.7),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.amber.withOpacity(0.5), width: 1),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.star, color: Colors.amber, size: 14),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    movie.voteAverage.toStringAsFixed(1),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                        // 🔥 3. Contenedor inferior translúcido para Géneros - Solo en la peli central
+                        if (isActive)
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            child: ClipRRect(
+                              // Redondeamos solo la parte de abajo para que encaje con la imagen
+                              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(15)),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.4), // Fondo oscuro translúcido
+                                  ),
+                                  child: Wrap(
+                                    alignment: WrapAlignment.center,
+                                    spacing: 6,
+                                    runSpacing: 6,
+                                    children: _getGenresList(movie.genreIds).map((genre) {
+                                      return Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.15),
+                                          borderRadius: BorderRadius.circular(20),
+                                          border: Border.all(color: Colors.white30, width: 1.0),
+                                        ),
+                                        child: Text(
+                                          genre,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 ),
@@ -207,7 +199,7 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
           const SizedBox(height: 24),
 
           // =========================================================
-          // 3. INDICADORES (DOTS) EN LA PARTE INFERIOR
+          // 2. INDICADORES (DOTS) EN LA PARTE INFERIOR
           // =========================================================
           Row(
             mainAxisAlignment: MainAxisAlignment.center,

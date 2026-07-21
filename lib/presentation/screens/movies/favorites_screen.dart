@@ -1,12 +1,12 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
 import 'package:dreamers_movies_app_bv/domain/entities/movie_entities.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/movie_card.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_bottom_nav.dart';
 import 'package:like_button/like_button.dart';
+import 'package:dreamers_movies_app_bv/domain/datasources/database_helper.dart';
+import 'package:dreamers_movies_app_bv/domain/repositories/user_repositories.dart';
 
 class FavoritesScreen extends StatefulWidget {
   static const name = 'favorites-screen';
@@ -17,54 +17,78 @@ class FavoritesScreen extends StatefulWidget {
 }
 
 class _FavoritesScreenState extends State<FavoritesScreen> {
+  final DatabaseHelper _dbHelper = DatabaseHelper();
+  final UserRepository _userRepository = UserRepository();
+  
   List<Movie> _favoriteMovies = [];
   bool _isLoading = true;
+  int? _currentProfileId;
 
   @override
   void initState() {
     super.initState();
-    _loadFavorites();
+    _loadFavoritesFromDB();
   }
 
-  Future<void> _loadFavorites() async {
-    final prefs = await SharedPreferences.getInstance();
-    final List<String> favsJson = prefs.getStringList('favorites_list') ?? [];
+  Future<void> _loadFavoritesFromDB() async {
+    try {
+      // 1. Obtenemos el usuario actual
+      final user = await _userRepository.getCurrentUser();
+      if (user != null) {
+        final db = await _dbHelper.database;
+        final profileResult = await db.query(
+          'perfil',
+          where: 'id_usuario = ?',
+          whereArgs: [user.id],
+          limit: 1,
+        );
 
-    final List<Movie> loadedMovies = favsJson.map((str) {
-      final data = jsonDecode(str);
-      // Reconstruimos el objeto para poder usarlo en tu MovieCard
-      return Movie(
-        id: data['id'],
-        title: data['title'],
-        posterPath: data['posterPath'],
-        backdropPath: data['backdropPath'] ?? '',
-        voteAverage: data['voteAverage'] ?? 0.0,
-        releaseDate:
-            DateTime.tryParse(data['releaseDate'] ?? '') ?? DateTime.now(),
+        if (profileResult.isNotEmpty) {
+          _currentProfileId = profileResult.first['id_perfil'] as int;
+          
+          // 2. Traemos SOLO los favoritos de este perfil
+          final favsData = await _dbHelper.getFavoriteMoviesByUser(_currentProfileId!);
+          
+          final List<Movie> loadedMovies = favsData.map((data) {
+            return Movie(
+              id: data['id_pelicula'] as int,
+              title: data['titulo'] as String,
+              posterPath: data['caratula_url'] as String,
+              backdropPath: '',
+              voteAverage: 5.0, // Valor por defecto si no lo guardaste en BD
+              releaseDate: DateTime.now(),
+              adult: false,
+              genreIds: [],
+              originalLanguage: '',
+              originalTitle: '',
+              overview: data['descripcion'] ?? '',
+              popularity: 0.0,
+              video: false,
+              voteCount: 0,
+            );
+          }).toList();
 
-        adult: false,
-        genreIds: [],
-        originalLanguage: '',
-        originalTitle: '',
-        overview: '',
-        popularity: 0.0,
-        video: false,
-        voteCount: 0,
-      );
-    }).toList();
-
-    setState(() {
-      _favoriteMovies = loadedMovies;
-      _isLoading = false;
-    });
+          if (mounted) {
+            setState(() {
+              _favoriteMovies = loadedMovies;
+              _isLoading = false;
+            });
+          }
+          return;
+        }
+      }
+      if (mounted) setState(() => _isLoading = false);
+    } catch (e) {
+      print('Error cargando favoritos de la BD: $e');
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _removeFavoriteFast(int movieId) async {
-    final prefs = await SharedPreferences.getInstance();
-    List<String> favs = prefs.getStringList('favorites_list') ?? [];
-
-    favs.removeWhere((movieStr) => movieStr.contains('"id":$movieId'));
-    await prefs.setStringList('favorites_list', favs);
+    if (_currentProfileId == null) return;
+    
+    // Lo borramos de la base de datos de este usuario específico
+    await _dbHelper.removeFavoriteLocal(_currentProfileId!, movieId);
 
     setState(() {
       _favoriteMovies.removeWhere((m) => m.id == movieId);
@@ -98,7 +122,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               physics: const BouncingScrollPhysics(),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2, // Dos columnas
+                crossAxisCount: 2, 
                 childAspectRatio: 0.65,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
@@ -109,12 +133,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 return GestureDetector(
                   onTap: () => context
                       .pushNamed('movie-details', extra: movie)
-                      .then((_) => _loadFavorites()),
+                      .then((_) => _loadFavoritesFromDB()),
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
                       MovieCard(movie: movie),
-
                       Positioned(
                         top: 8,
                         left: 8,
@@ -161,7 +184,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 );
               },
             ),
-      bottomNavigationBar: const HomeBottomNav(), // La misma barra inteligente
+      bottomNavigationBar: const HomeBottomNav(), 
     );
   }
 }

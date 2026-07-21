@@ -10,7 +10,7 @@ import 'package:dreamers_movies_app_bv/domain/datasources/movie_datasources.dart
 import 'package:dreamers_movies_app_bv/infrastructure/datasources/tmdb_datasource.dart';
 import 'package:dreamers_movies_app_bv/domain/datasources/local_reviews_datasource.dart';
 import 'package:dreamers_movies_app_bv/domain/datasources/database_helper.dart';
-
+import 'package:dio/dio.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_header.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_category_filter.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_section_header.dart';
@@ -19,6 +19,7 @@ import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_bottom_nav
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_reviews.dart';
 // 🔥 AQUÍ ESTÁ LA IMPORTACIÓN QUE FALTABA 🔥
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_banner_carousel.dart';
+import 'package:dreamers_movies_app_bv/presentation/widgets/shared/app_refresh_indicator.dart';
 
 class HomeScreen extends StatefulWidget {
   static const name = 'home-screen';
@@ -112,6 +113,9 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadInitialData();
+    
+    // SABOTAJE TEMPORAL
+    
   }
 
   @override
@@ -158,11 +162,31 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       setState(() => _isLoadingMovies = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al cargar datos: $e')),
-        );
+        // Primero verificamos si es un error 404 de TMDB
+        if (e is DioException && e.response?.statusCode == 404) {
+          context.go('/error-404'); 
+          return; // Salimos de la función
+        }
+
+        // Si no fue 404, checamos si es falta de internet
+        final errorString = e.toString().toLowerCase();
+        if (errorString.contains('failed host lookup') || 
+            errorString.contains('socketexception') || 
+            errorString.contains('connection error')) {
+          context.go('/no-connection');
+        } else {
+          // Si no es internet ni 404, asumimos que es el servidor (500)
+          context.go('/error-500');
+        }
       }
     }
+  }
+
+  /// Recarga todos los datos de la Home (películas + reseñas locales).
+  /// Este es el callback que dispara el pull-to-refresh.
+  Future<void> _handlePullToRefresh() async {
+    await _loadInitialData();
+    await _loadDBReviews();
   }
 
   Future<void> _loadStaticReviews() async {
@@ -417,8 +441,15 @@ class _HomeScreenState extends State<HomeScreen> {
       extendBody: true,
       body: _isLoadingMovies
           ? const Center(child: CircularProgressIndicator(color: Colors.white))
-          : CustomScrollView(
-              physics: const BouncingScrollPhysics(),
+          : AppRefreshIndicator(
+              onRefresh: _handlePullToRefresh,
+              child: CustomScrollView(
+              // AlwaysScrollableScrollPhysics es necesario para que el
+              // pull-to-refresh funcione incluso si el contenido no llena
+              // toda la pantalla (poco contenido / pantallas grandes).
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
+              ),
               slivers: [
                 SliverAppBar(
                   pinned: true,
@@ -520,6 +551,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SliverToBoxAdapter(child: SizedBox(height: 100)),
               ],
+              ),
             ),
       bottomNavigationBar: const HomeBottomNav(),
     );

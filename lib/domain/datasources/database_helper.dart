@@ -20,7 +20,6 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDatabase() async {
-   
     if (!kIsWeb) {
       try {
         if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
@@ -39,11 +38,7 @@ class DatabaseHelper {
     final path = join(directory.path, 'cinexa.db');
 
     print(' Base de datos en: $path');
-    return await openDatabase(
-      path,
-      version: 1,
-      onCreate: _onCreate,
-    );
+    return await openDatabase(path, version: 1, onCreate: _onCreate);
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -91,7 +86,6 @@ class DatabaseHelper {
     ''');
     print('✅ Tabla "pelicula" creada');
 
-    // MODIFICADO: Eliminada la restricción UNIQUE(id_perfil, id_pelicula) para permitir historial de comentarios
     await db.execute('''
       CREATE TABLE resena (
         id_resena INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -136,7 +130,6 @@ class DatabaseHelper {
     print(' Base de datos creada exitosamente');
   }
 
- 
   Future<Map<String, dynamic>?> registerUser(Map<String, dynamic> userData) async {
     final db = await database;
     print(' Registrando usuario: ${userData['email']}');
@@ -182,7 +175,6 @@ class DatabaseHelper {
     }
   }
 
-
   Future<Map<String, dynamic>?> loginUser(String email, String password) async {
     final db = await database;
     try {
@@ -198,7 +190,6 @@ class DatabaseHelper {
     }
   }
 
-  
   Future<void> saveReviewLocal({
     required int idPerfil,
     required int idPelicula,
@@ -210,31 +201,22 @@ class DatabaseHelper {
   }) async {
     final db = await database;
     try {
-      await db.insert(
-        'pelicula', 
-        {
-          'id_pelicula': idPelicula, 
-          'titulo': titulo,
-          'descripcion': descripcion,
-          'url_archivo': 'N/A',
-          'caratula_url': caratulaUrl,
-          'activo': 1,
-        }, 
-        conflictAlgorithm: ConflictAlgorithm.ignore,
-      );
+      await db.insert('pelicula', {
+        'id_pelicula': idPelicula,
+        'titulo': titulo,
+        'descripcion': descripcion,
+        'url_archivo': 'N/A',
+        'caratula_url': caratulaUrl,
+        'activo': 1,
+      }, conflictAlgorithm: ConflictAlgorithm.ignore);
 
-      // MODIFICADO: Cambiado a ConflictAlgorithm.abort para acumular mensajes sin sobreescribir
-      await db.insert(
-        'resena', 
-        {
-          'id_perfil': idPerfil,
-          'id_pelicula': idPelicula,
-          'puntuacion': rating,
-          'comentario': comentario,
-          'fecha_creacion': DateTime.now().toIso8601String(),
-        }, 
-        conflictAlgorithm: ConflictAlgorithm.abort,
-      );
+      await db.insert('resena', {
+        'id_perfil': idPerfil,
+        'id_pelicula': idPelicula,
+        'puntuacion': rating,
+        'comentario': comentario,
+        'fecha_creacion': DateTime.now().toIso8601String(),
+      }, conflictAlgorithm: ConflictAlgorithm.abort);
       print(' Reseña guardada localmente para la película: $titulo');
     } catch (e) {
       print(' Error al guardar la reseña local: $e');
@@ -242,12 +224,10 @@ class DatabaseHelper {
     }
   }
 
-
   Future<String> getDatabasePath() async {
     final directory = await getApplicationDocumentsDirectory();
     return join(directory.path, 'cinexa.db');
   }
-
 
   Future<Map<String, dynamic>?> authOrRegisterWithGoogle({
     required String email,
@@ -298,5 +278,182 @@ class DatabaseHelper {
       print('❌ Error en authOrRegisterWithGoogle: $e');
       rethrow;
     }
+  }
+
+  // =========================================================================
+  // 🔥 GRÁFICA: Conteo INTELIGENTE separando géneros individuales
+  // =========================================================================
+  Future<List<Map<String, dynamic>>> getFavoriteGenresData(int idPerfil) async {
+    final db = await database;
+    try {
+      final result = await db.rawQuery(
+        '''
+        SELECT p.genero
+        FROM favorito f
+        JOIN pelicula p ON f.id_pelicula = p.id_pelicula
+        WHERE f.id_perfil = ?
+      ''',
+        [idPerfil],
+      );
+
+      Map<String, int> conteoGeneros = {};
+
+      for (var row in result) {
+        String generosRaw = row['genero'].toString();
+        List<String> generosLista = generosRaw.split(',');
+        for (String gen in generosLista) {
+          String generoLimpio = gen.trim();
+          if (generoLimpio.isNotEmpty && generoLimpio != 'Desconocido') {
+            conteoGeneros[generoLimpio] = (conteoGeneros[generoLimpio] ?? 0) + 1;
+          }
+        }
+      }
+
+      List<Map<String, dynamic>> finalData = [];
+      conteoGeneros.forEach((key, value) {
+        finalData.add({'genero': key, 'total': value});
+      });
+
+      finalData.sort((a, b) => b['total'].compareTo(a['total']));
+      return finalData;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // =========================================================================
+  // 🔥 FUNCIONES PARA FAVORITOS (RESTAURADAS)
+  // =========================================================================
+  Future<List<Map<String, dynamic>>> getFavoriteMoviesByUser(int idPerfil) async {
+    final db = await database;
+    try {
+      return await db.rawQuery('''
+        SELECT p.*
+        FROM favorito f
+        JOIN pelicula p ON f.id_pelicula = p.id_pelicula
+        WHERE f.id_perfil = ?
+        ORDER BY f.fecha_agregado DESC
+      ''', [idPerfil]);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<void> removeFavoriteLocal(int idPerfil, int idPelicula) async {
+    final db = await database;
+    try {
+      await db.delete('favorito', where: 'id_perfil = ? AND id_pelicula = ?', whereArgs: [idPerfil, idPelicula]);
+    } catch (e) {}
+  }
+
+  Future<void> addFavoriteLocal({
+    required int idPerfil, required int idPelicula, required String titulo,
+    required String descripcion, required String caratulaUrl, required String genero,
+  }) async {
+    final db = await database;
+    try {
+      await db.insert('pelicula', {
+        'id_pelicula': idPelicula, 'titulo': titulo, 'descripcion': descripcion,
+        'url_archivo': 'N/A', 'caratula_url': caratulaUrl, 'genero': genero, 'activo': 1,
+      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+      
+      await db.insert('favorito', {
+        'id_perfil': idPerfil, 'id_pelicula': idPelicula, 'fecha_agregado': DateTime.now().toIso8601String(),
+      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+    } catch (e) {}
+  }
+
+  Future<bool> isFavoriteLocal(int idPerfil, int idPelicula) async {
+    final db = await database;
+    final result = await db.query('favorito', where: 'id_perfil = ? AND id_pelicula = ?', whereArgs: [idPerfil, idPelicula]);
+    return result.isNotEmpty;
+  }
+
+  // =========================================================================
+  // 🔥 FUNCIONES PARA "MIS GUARDADOS" MULTIUSUARIO
+  // =========================================================================
+  Future<void> _ensureGuardadoTableExists(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS guardado (
+        id_guardado INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_perfil INTEGER NOT NULL,
+        id_pelicula INTEGER NOT NULL,
+        fecha_agregado TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (id_perfil) REFERENCES perfil(id_perfil) ON DELETE CASCADE,
+        FOREIGN KEY (id_pelicula) REFERENCES pelicula(id_pelicula) ON DELETE CASCADE,
+        UNIQUE(id_perfil, id_pelicula)
+      )
+    ''');
+  }
+
+  Future<List<Map<String, dynamic>>> getSavedMoviesByUser(int idPerfil) async {
+    final db = await database;
+    await _ensureGuardadoTableExists(db);
+    try {
+      return await db.rawQuery(
+        '''
+        SELECT p.*
+        FROM guardado g
+        JOIN pelicula p ON g.id_pelicula = p.id_pelicula
+        WHERE g.id_perfil = ?
+        ORDER BY g.fecha_agregado DESC
+      ''',
+        [idPerfil],
+      );
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<void> removeSavedLocal(int idPerfil, int idPelicula) async {
+    final db = await database;
+    await _ensureGuardadoTableExists(db);
+    try {
+      await db.delete(
+        'guardado',
+        where: 'id_perfil = ? AND id_pelicula = ?',
+        whereArgs: [idPerfil, idPelicula],
+      );
+    } catch (e) {}
+  }
+
+  Future<void> addSavedLocal({
+    required int idPerfil,
+    required int idPelicula,
+    required String titulo,
+    required String descripcion,
+    required String caratulaUrl,
+    required String genero,
+  }) async {
+    final db = await database;
+    await _ensureGuardadoTableExists(db);
+    try {
+      await db.insert('pelicula', {
+        'id_pelicula': idPelicula,
+        'titulo': titulo,
+        'descripcion': descripcion,
+        'url_archivo': 'N/A',
+        'caratula_url': caratulaUrl,
+        'genero': genero,
+        'activo': 1,
+      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+
+      await db.insert('guardado', {
+        'id_perfil': idPerfil,
+        'id_pelicula': idPelicula,
+        'fecha_agregado': DateTime.now().toIso8601String(),
+      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+    } catch (e) {}
+  }
+
+  Future<bool> isSavedLocal(int idPerfil, int idPelicula) async {
+    final db = await database;
+    await _ensureGuardadoTableExists(db);
+    final result = await db.query(
+      'guardado',
+      where: 'id_perfil = ? AND id_pelicula = ?',
+      whereArgs: [idPerfil, idPelicula],
+    );
+    return result.isNotEmpty;
   }
 }

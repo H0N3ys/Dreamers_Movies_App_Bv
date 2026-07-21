@@ -12,6 +12,7 @@ import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_section_he
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/movie_card.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_bottom_nav.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/search_movie_result_card.dart';
+import 'package:dreamers_movies_app_bv/presentation/widgets/shared/app_refresh_indicator.dart';
 
 class SearchScreen extends StatefulWidget {
   static const name = 'search-screen';
@@ -138,6 +139,29 @@ void _onSearchChanged() {
     });
   }
 
+  /// Recarga todo el catálogo de la pantalla de búsqueda.
+  /// Si el usuario tenía una búsqueda activa, además la vuelve a ejecutar
+  /// para traer resultados frescos.
+  Future<void> _handlePullToRefresh() async {
+    await _loadMovies();
+
+    final query = _searchController.text.trim();
+    if (query.isNotEmpty) {
+      try {
+        final results = await _movieDatasource.searchMovies(query);
+        if (mounted) {
+          setState(() {
+            _searchResults = results.where((movie) {
+              return movie.title.toLowerCase().contains(query.toLowerCase());
+            }).toList();
+          });
+        }
+      } catch (e) {
+        debugPrint("Error refrescando búsqueda: $e");
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -153,9 +177,12 @@ void _onSearchChanged() {
                   _buildSearchBar(),
                   const SizedBox(height: 16),
                   Expanded(
-                    child: _isSearching
-                        ? _buildSearchResults()
-                        : _buildEmptyState(),
+                    child: AppRefreshIndicator(
+                      onRefresh: _handlePullToRefresh,
+                      child: _isSearching
+                          ? _buildSearchResults()
+                          : _buildEmptyState(),
+                    ),
                   ),
                 ],
               ),
@@ -243,7 +270,9 @@ void _onSearchChanged() {
     final categoryNames = _categories.map((c) => c['name'] as String).toList();
 
     return CustomScrollView(
-      physics: const BouncingScrollPhysics(),
+      physics: const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
+      ),
       slivers: [
         SliverToBoxAdapter(
           child: HomeCategoryFilter(
@@ -302,29 +331,43 @@ void _onSearchChanged() {
 
   Widget _buildSearchResults() {
     if (_searchResults.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.search_off_rounded,
-                color: Colors.white24, size: 56),
-            const SizedBox(height: 16),
-            Text(
-              'Sin resultados para\n"${_searchController.text}"',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontFamily: AppTheme.secondaryFont,
-                color: Colors.white38,
-                fontSize: 15,
+      // ListView (en vez de Center) para que el pull-to-refresh también
+      // funcione cuando la búsqueda no arroja resultados.
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
+        children: [
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.5,
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.search_off_rounded,
+                      color: Colors.white24, size: 56),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Sin resultados para\n"${_searchController.text}"',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontFamily: AppTheme.secondaryFont,
+                      color: Colors.white38,
+                      fontSize: 15,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       );
     }
 
     return ListView.builder(
-      physics: const BouncingScrollPhysics(),
+      physics: const AlwaysScrollableScrollPhysics(
+        parent: BouncingScrollPhysics(),
+      ),
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 100),
       itemCount: _searchResults.length,
       itemBuilder: (context, index) {

@@ -134,7 +134,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   title: nombrePrincipal,
                   subtitle: 'Perfil primario',
                   isSelected: true,
-                  onTap: () {},
+                  onTap: () {
+                    // 🔥 ESTA ES LA LÍNEA QUE HACE LA MAGIA
+                    context.pushNamed('user-details-screen');
+                  },
                 ),
                 
                 const Padding(
