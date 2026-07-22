@@ -149,7 +149,6 @@ class _SavedScreenState extends State<SavedScreen> {
   }
 }
 
-// 🔥 NUEVO WIDGET PARA TARJETA DE GUARDADOS CON DISEÑO MEJORADO
 class _SavedMovieCard extends StatelessWidget {
   final Movie movie;
   final VoidCallback onTap;
@@ -234,34 +233,30 @@ class _SavedMovieCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    // Botón de eliminar
+                    // 🔥 BOTÓN DE GUARDADO EN ESQUINA SUPERIOR IZQUIERDA (AMARILLO)
                     Positioned(
                       top: 8,
-                      right: 8,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.6),
-                          shape: BoxShape.circle,
-                        ),
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.close_rounded,
-                            color: Colors.white,
-                            size: 18,
+                      left: 8,
+                      child: GestureDetector(
+                        onTap: onRemove,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.6),
+                            shape: BoxShape.circle,
                           ),
-                          onPressed: onRemove,
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: 32,
-                            minHeight: 32,
+                          child: const Icon(
+                            Icons.bookmark_rounded,
+                            color: Colors.amber,
+                            size: 18,
                           ),
                         ),
                       ),
                     ),
-                    // Calificación
+                    // 🔥 PUNTUACIÓN EN ESQUINA SUPERIOR DERECHA
                     Positioned(
                       top: 8,
-                      left: 8,
+                      right: 8,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
@@ -273,14 +268,14 @@ class _SavedMovieCard extends StatelessWidget {
                             const Icon(
                               Icons.star,
                               color: Colors.amber,
-                              size: 14,
+                              size: 12,
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 3),
                             Text(
                               movie.voteAverage.toStringAsFixed(1),
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 12,
+                                fontSize: 11,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
