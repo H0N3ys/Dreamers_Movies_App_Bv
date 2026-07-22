@@ -1,26 +1,28 @@
 import 'dart:async';
-
-import 'package:carousel_slider/carousel_slider.dart';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:carousel_slider/carousel_slider.dart';
+import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
 
-import 'package:dreamers_movies_app_bv/domain/datasources/database_helper.dart';
-import 'package:dreamers_movies_app_bv/domain/datasources/local_reviews_datasource.dart';
-import 'package:dreamers_movies_app_bv/domain/datasources/movie_datasources.dart';
 import 'package:dreamers_movies_app_bv/domain/entities/movie_entities.dart';
+import 'package:dreamers_movies_app_bv/domain/datasources/movie_datasources.dart';
 import 'package:dreamers_movies_app_bv/infrastructure/datasources/tmdb_datasource.dart';
-import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_bottom_nav.dart';
-import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_category_filter.dart';
+import 'package:dreamers_movies_app_bv/domain/datasources/local_reviews_datasource.dart';
+import 'package:dreamers_movies_app_bv/domain/datasources/database_helper.dart';
+import 'package:dio/dio.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_header.dart';
-import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_reviews.dart';
-import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_search_bar.dart';
+import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_category_filter.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_section_header.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/movie_card.dart';
-import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
+import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_bottom_nav.dart';
+import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_reviews.dart';
+// 🔥 AQUÍ ESTÁ LA IMPORTACIÓN QUE FALTABA 🔥
+import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_banner_carousel.dart';
+import 'package:dreamers_movies_app_bv/presentation/widgets/shared/app_refresh_indicator.dart';
 
 class HomeScreen extends StatefulWidget {
   static const name = 'home-screen';
-
   const HomeScreen({super.key});
 
   @override
@@ -29,21 +31,24 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final MovieDatasources _movieDatasource = TmdbDatasource();
+  final LocalReviewsDatasource _reviewsDatasource = LocalReviewsDatasource();
   final DatabaseHelper _dbHelper = DatabaseHelper();
 
   List<Movie> _nowPlayingMovies = [];
   List<Movie> _popularMoviesApi = [];
   List<Movie> _topRatedMovies = [];
-  List<Movie> _upcomingMovies = [];
-  List<Movie> _mostViewedMovies = [];
-  List<Movie> _topMexicoMovies = [];
-  List<Movie> _allMoviesPool = [];
-  List<Movie> _filteredMovies = [];
-  List<Map<String, dynamic>> _dbReviews = [];
-  List<ReviewData> _recentReviews = [];
+  List<Movie> _upcomingMovies = []; 
+  List<Movie> _comedyMovies = [];
+  List<Movie> _horrorMovies = [];
+  List<Movie> _allMoviesPool = []; 
+  List<Movie> _filteredMovies = []; 
+  
+  List<Map<String, dynamic>> _recentReviews = []; 
+  List<Map<String, dynamic>> _dbReviews = []; 
 
   bool _isLoadingMovies = true;
   int _selectedCategoryIndex = 0;
+  int _currentNavIndex = 0;
 
   final List<Map<String, dynamic>> _categories = [
     {'name': 'Todo', 'id': 0},
@@ -60,6 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
     {'name': 'Familia', 'id': 10751},
   ];
 
+  // Reseñas estáticas de ejemplo (se mantienen como fallback)
   final List<ReviewData> _staticReviews = const [
     ReviewData(
       userName: 'María González',
@@ -85,12 +91,31 @@ class _HomeScreenState extends State<HomeScreen> {
       movieTitle: 'Oppenheimer',
       reviewDate: 'Hace 2 días',
     ),
+    ReviewData(
+      userName: 'Jorge Pérez',
+      userAvatar: '',
+      rating: 4.2,
+      reviewText: 'Muy entretenida y con un mensaje profundo. Me encantó cómo desarrollaron los personajes.',
+      movieTitle: 'Barbie',
+      reviewDate: 'Hace 3 días',
+    ),
+    ReviewData(
+      userName: 'Laura Sánchez',
+      userAvatar: '',
+      rating: 4.7,
+      reviewText: 'Una historia emocionante que te hace reflexionar sobre la vida y las decisiones.',
+      movieTitle: 'Poor Things',
+      reviewDate: 'Hace 4 días',
+    ),
   ];
 
   @override
   void initState() {
     super.initState();
     _loadInitialData();
+    
+    // SABOTAJE TEMPORAL
+    
   }
 
   @override
@@ -101,27 +126,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadInitialData() async {
     try {
-      final movieResults = await Future.wait([
+      // Cargar solo las 4 listas de películas
+      final results = await Future.wait([
         _movieDatasource.getNowPlaying(),
         _movieDatasource.getPopular(),
         _movieDatasource.getTopRated(),
         _movieDatasource.getUpcoming(),
       ]);
 
-      final mostViewedMovies = await _loadMostViewedMovies();
-      final topMexicoMovies = await _loadTopMexicoMovies();
-
+      // Cargar reseñas estáticas (no bloquea la UI)
       unawaited(_loadStaticReviews());
 
-      if (!mounted) return;
-
       setState(() {
-        _nowPlayingMovies = movieResults[0];
-        _popularMoviesApi = movieResults[1];
-        _topRatedMovies = movieResults[2];
-        _upcomingMovies = movieResults[3];
-        _mostViewedMovies = mostViewedMovies;
-        _topMexicoMovies = topMexicoMovies;
+        _nowPlayingMovies = results[0] as List<Movie>;
+        _popularMoviesApi = results[1] as List<Movie>;
+        _topRatedMovies = results[2] as List<Movie>;
+        _upcomingMovies = results[3] as List<Movie>;
 
         _allMoviesPool = [
           ..._nowPlayingMovies,
@@ -130,42 +150,81 @@ class _HomeScreenState extends State<HomeScreen> {
           ..._upcomingMovies,
         ];
 
-        final Map<int, Movie> uniqueMovies = {for (var movie in _allMoviesPool) movie.id: movie};
+        // Eliminar duplicados por ID
+        final Map<int, Movie> uniqueMovies = {for (var m in _allMoviesPool) m.id: m};
         _allMoviesPool = uniqueMovies.values.toList();
-        _filteredMovies = _popularMoviesApi;
+        
+        _filteredMovies = _popularMoviesApi; 
+        _comedyMovies = _allMoviesPool.where((movie) => movie.genreIds.contains(35)).toList();
+        _horrorMovies = _allMoviesPool.where((movie) => movie.genreIds.contains(27)).toList();
         _isLoadingMovies = false;
       });
     } catch (e) {
-      if (!mounted) return;
       setState(() => _isLoadingMovies = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al cargar datos: $e')),
-      );
+      if (mounted) {
+        // Primero verificamos si es un error 404 de TMDB
+        if (e is DioException && e.response?.statusCode == 404) {
+          context.go('/error-404'); 
+          return; // Salimos de la función
+        }
+
+        // Si no fue 404, checamos si es falta de internet
+        final errorString = e.toString().toLowerCase();
+        if (errorString.contains('failed host lookup') || 
+            errorString.contains('socketexception') || 
+            errorString.contains('connection error')) {
+          context.go('/no-connection');
+        } else {
+          // Si no es internet ni 404, asumimos que es el servidor (500)
+          context.go('/error-500');
+        }
+      }
     }
   }
 
-  Future<List<Movie>> _loadMostViewedMovies() async {
-    try {
-      final popular = await _movieDatasource.getPopular(page: 2);
-      return popular.take(10).toList();
-    } catch (_) {
-      return [];
-    }
-  }
-
-  Future<List<Movie>> _loadTopMexicoMovies() async {
-    try {
-      final nowPlaying = await _movieDatasource.getNowPlaying(page: 2);
-      return nowPlaying.take(10).toList();
-    } catch (_) {
-      return [];
-    }
+  /// Recarga todos los datos de la Home (películas + reseñas locales).
+  /// Este es el callback que dispara el pull-to-refresh.
+  Future<void> _handlePullToRefresh() async {
+    await _loadInitialData();
+    await _loadDBReviews();
   }
 
   Future<void> _loadStaticReviews() async {
+    await Future.delayed(const Duration(milliseconds: 400));
     if (!mounted) return;
     setState(() {
-      _recentReviews = _staticReviews;
+      _recentReviews = [
+        {
+          'puntuacion': 5,
+          'comentario': 'Excelente película, el diseño de la interfaz visual en pantalla y la dirección me sorprendieron.',
+          'titulo': 'Deadpool & Wolverine',
+          'autor': 'Luis Antonio',
+        },
+        {
+          'puntuacion': 4,
+          'comentario': 'Muy buena historia. Me ayudó a relajarme después de una semana pesada de proyectos.',
+          'titulo': 'Intensamente 2',
+          'autor': 'María Ángela',
+        },
+        {
+          'puntuacion': 5,
+          'comentario': 'Visualmente increíble. Totalmente recomendada si te gusta la acción pura.',
+          'titulo': 'Dune: Parte Dos',
+          'autor': 'Julio',
+        },
+        {
+          'puntuacion': 5,
+          'comentario': 'Una obra maestra del suspenso. Te mantiene al borde del asiento todo el tiempo con su música.',
+          'titulo': 'Oppenheimer',
+          'autor': 'Janet',
+        },
+        {
+          'puntuacion': 4,
+          'comentario': 'Gran estilo único. El soundtrack es simplemente espectacular.',
+          'titulo': 'Spider-Man: Across the Spider-Verse',
+          'autor': 'Carlos',
+        }
+      ];
     });
   }
 
@@ -181,12 +240,13 @@ class _HomeScreenState extends State<HomeScreen> {
         ORDER BY r.fecha_creacion DESC
         LIMIT 10
       ''');
-      if (!mounted) return;
-      setState(() {
-        _dbReviews = reviews;
-      });
+      if (mounted) {
+        setState(() {
+          _dbReviews = reviews;
+        });
+      }
     } catch (e) {
-      debugPrint('Error cargando reseñas: $e');
+      debugPrint('Error cargando reseñas de la BD: $e');
     }
   }
 
@@ -204,95 +264,27 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Widget _buildHeroCarousel(List<Movie> movies) {
-    if (movies.isEmpty) return const SizedBox.shrink();
-
-    return CarouselSlider.builder(
-      itemCount: movies.length,
-      options: CarouselOptions(
-        height: 220,
-        autoPlay: true,
-        autoPlayInterval: const Duration(seconds: 4),
-        viewportFraction: 0.9,
-        enlargeCenterPage: true,
-        enableInfiniteScroll: true,
-      ),
-      itemBuilder: (context, index, realIndex) {
-        final movie = movies[index];
-        return GestureDetector(
-          onTap: () => context.pushNamed('movie-details', extra: movie),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Image.network(
-                  movie.backdropPath.isNotEmpty ? movie.backdropPath : movie.posterPath,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(color: Colors.grey.shade900),
-                ),
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withOpacity(0.2),
-                        Colors.black.withOpacity(0.85),
-                      ],
-                    ),
-                  ),
-                ),
-                Positioned(
-                  left: 16,
-                  right: 16,
-                  bottom: 16,
-                  child: Text(
-                    movie.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildMovieRow(List<Movie> movies) {
+  Widget _buildMovieRow(List<Movie> movies, {int? activeGenreId}) {
     if (movies.isEmpty) {
       return const SizedBox(
         height: 230,
-        child: Center(
-          child: Text('No hay películas', style: TextStyle(color: Colors.white54)),
-        ),
+        child: Center(child: Text('No hay películas', style: TextStyle(color: Colors.white54))),
       );
     }
-
     return SizedBox(
       height: 230,
       child: ShaderMask(
         shaderCallback: (Rect bounds) {
-          return LinearGradient(
+          return const LinearGradient(
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
             colors: [
               Colors.transparent,
-              AppColors.accentColor.withValues(alpha: 0.05),
-              AppColors.accentColor,
-              AppColors.accentColor,
-              AppColors.accentColor.withValues(alpha: 0.05),
-              Colors.transparent,
+              Colors.white,
+              Colors.black,
+              Colors.transparent
             ],
-            stops: const [0.0, 0.03, 0.1, 0.88, 0.97, 1.0],
+            stops: [0.02, 0.10, 0.90, 1.0],
           ).createShader(bounds);
         },
         blendMode: BlendMode.dstIn,
@@ -305,7 +297,10 @@ class _HomeScreenState extends State<HomeScreen> {
             final movie = movies[index];
             return MovieCard(
               movie: movie,
-              onTap: () => context.pushNamed('movie-details', extra: movie),
+              activeGenreId: activeGenreId,
+              onTap: () {
+                context.pushNamed('movie-details', extra: movie).then((_) => _loadDBReviews());
+              },
             );
           },
         ),
@@ -313,85 +308,249 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildReviewsSection() {
-    final reviews = _dbReviews.isNotEmpty
-        ? _dbReviews.map((review) {
-            return ReviewData(
-              userName: review['autor']?.toString() ?? 'Usuario',
-              userAvatar: '',
-              rating: (review['puntuacion'] as num?)?.toDouble() ?? 0,
-              reviewText: review['comentario']?.toString() ?? '',
-              movieTitle: review['titulo']?.toString() ?? 'Película',
-              reviewDate: review['fecha_creacion']?.toString(),
-            );
-          }).toList()
-        : _recentReviews;
+  Widget _buildStarRating(int rating) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(5, (index) {
+        return Icon(
+          index < rating ? Icons.star : Icons.star_border,
+          color: Colors.amber,
+          size: 16,
+        );
+      }),
+    );
+  }
 
-    return HomeReviews(reviews: reviews);
+  Widget _buildReviewsCarousel(BuildContext context, List<Map<String, dynamic>> reviewsList) {
+    if (reviewsList.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 22),
+        child: Text('Aún no hay reseñas registradas.', style: TextStyle(color: Colors.white54)),
+      );
+    }
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    final double cardWidth = 320.0;
+    final double viewportFraction = (cardWidth / screenWidth).clamp(0.1, 1.0);
+
+    return CarouselSlider.builder(
+      itemCount: reviewsList.length,
+      options: CarouselOptions(
+        height: 200.0,
+        autoPlay: true,
+        autoPlayInterval: const Duration(seconds: 4),
+        autoPlayAnimationDuration: const Duration(milliseconds: 800),
+        autoPlayCurve: Curves.fastOutSlowIn,
+        enlargeCenterPage: false,
+        viewportFraction: viewportFraction,
+        enableInfiniteScroll: true,
+        padEnds: false,
+      ),
+      itemBuilder: (context, index, realIndex) {
+        final review = reviewsList[index];
+        final String autor = review['autor'] ?? 'Usuario';
+        final int rating = (review['puntuacion'] as num?)?.toInt() ?? 0;
+
+        return Container(
+          width: cardWidth,
+          margin: const EdgeInsets.only(left: 22),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white.withAlpha(15),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withAlpha(25)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 22,
+                    backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=${autor.replaceAll(' ', '')}'),
+                    backgroundColor: AppColors.accentColor,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          autor,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        _buildStarRating(rating),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: Text(
+                  review['comentario'] ?? '',
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                    height: 1.4,
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Icon(Icons.movie_creation_outlined, color: Colors.white54, size: 14),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      review['titulo'] ?? '',
+                      style: const TextStyle(
+                        color: Colors.white54,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final List<String> categoryNames = _categories.map((c) => c['name'] as String).toList();
+    final int? currentGenreId = _selectedCategoryIndex == 0 ? null : _categories[_selectedCategoryIndex]['id'] as int;
 
     return Scaffold(
       backgroundColor: AppColors.secondaryColor,
       extendBody: true,
       body: _isLoadingMovies
           ? const Center(child: CircularProgressIndicator(color: Colors.white))
-          : SafeArea(
-              bottom: false,
+          : AppRefreshIndicator(
+              onRefresh: _handlePullToRefresh,
               child: CustomScrollView(
-                physics: const BouncingScrollPhysics(),
-                slivers: [
-                  const SliverToBoxAdapter(child: SizedBox(height: 20)),
-                  const SliverToBoxAdapter(child: HomeHeader()),
-                  const SliverToBoxAdapter(child: SizedBox(height: 20)),
-                  const SliverToBoxAdapter(child: HomeSearchBar()),
-                  const SliverToBoxAdapter(child: SizedBox(height: 20)),
-                  SliverToBoxAdapter(child: _buildHeroCarousel(_nowPlayingMovies.take(6).toList())),
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                  SliverToBoxAdapter(
-                    child: HomeSectionHeader(title: 'Explorar', onSeeAll: () => context.go('/search')),
-                  ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 14)),
-                  SliverToBoxAdapter(
-                    child: HomeCategoryFilter(
-                      categories: categoryNames,
-                      selectedIndex: _selectedCategoryIndex,
-                      onCategorySelected: _filterByCategory,
+              // AlwaysScrollableScrollPhysics es necesario para que el
+              // pull-to-refresh funcione incluso si el contenido no llena
+              // toda la pantalla (poco contenido / pantallas grandes).
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
+              ),
+              slivers: [
+                SliverAppBar(
+                  pinned: true,
+                  floating: false,
+                  elevation: 0,
+                  backgroundColor: AppColors.secondaryColor.withAlpha(200),
+                  toolbarHeight: 70,
+                  flexibleSpace: ClipRect(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                      child: Container(
+                        color: Colors.transparent,
+                      ),
                     ),
                   ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 28)),
-                  SliverToBoxAdapter(
-                    child: HomeSectionHeader(
-                      title: _selectedCategoryIndex == 0 ? 'Tendencias actuales' : 'Resultados de tu filtro',
+                  title: const HomeHeader(),
+                  titleSpacing: 0,
+                ),
+
+                const SliverToBoxAdapter(child: SizedBox(height: 10)),
+                // 🔥 AQUÍ SE USA EL NUEVO COMPONENTE 🔥
+                SliverToBoxAdapter(child: HomeBannerCarousel(movies: _nowPlayingMovies.take(6).toList())),
+
+                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                const SliverToBoxAdapter(child: HomeSectionHeader(title: 'Explorar')),
+                const SliverToBoxAdapter(child: SizedBox(height: 14)),
+                SliverToBoxAdapter(
+                  child: HomeCategoryFilter(
+                    categories: categoryNames,
+                    selectedIndex: _selectedCategoryIndex,
+                    onCategorySelected: _filterByCategory,
+                  ),
+                ),
+
+                const SliverToBoxAdapter(child: SizedBox(height: 28)),
+                SliverToBoxAdapter(
+                  child: HomeSectionHeader(
+                    title: _selectedCategoryIndex == 0 ? 'Tendencias actuales' : 'Resultados de tu filtro',
+                  ),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 14)),
+                SliverToBoxAdapter(child: _buildMovieRow(_filteredMovies, activeGenreId: currentGenreId)),
+
+                const SliverToBoxAdapter(child: SizedBox(height: 28)),
+                const SliverToBoxAdapter(child: HomeSectionHeader(title: 'Próximos Estrenos')),
+                const SliverToBoxAdapter(child: SizedBox(height: 14)),
+                SliverToBoxAdapter(child: _buildMovieRow(_upcomingMovies)),
+
+                const SliverToBoxAdapter(child: SizedBox(height: 28)),
+                const SliverToBoxAdapter(child: HomeSectionHeader(title: 'Aclamadas por la crítica')),
+                const SliverToBoxAdapter(child: SizedBox(height: 14)),
+                SliverToBoxAdapter(child: _buildMovieRow(_topRatedMovies)),
+                
+                const SliverToBoxAdapter(child: SizedBox(height: 28)),
+                const SliverToBoxAdapter(child: HomeSectionHeader(title: 'Comedia para reír sin parar')),
+                const SliverToBoxAdapter(child: SizedBox(height: 14)),
+                SliverToBoxAdapter(child: _buildMovieRow(_comedyMovies, activeGenreId: 35)),
+
+                const SliverToBoxAdapter(child: SizedBox(height: 28)),
+                const SliverToBoxAdapter(child: HomeSectionHeader(title: 'Noches de Terror')),
+                const SliverToBoxAdapter(child: SizedBox(height: 14)),
+                SliverToBoxAdapter(child: _buildMovieRow(_horrorMovies, activeGenreId: 27)),
+
+                // Actividad de la comunidad (reseñas estáticas)
+                const SliverToBoxAdapter(child: SizedBox(height: 36)),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 22),
+                    child: Text(
+                      'Actividad de la comunidad',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 14)),
-                  SliverToBoxAdapter(child: _buildMovieRow(_filteredMovies)),
-                  const SliverToBoxAdapter(child: SizedBox(height: 28)),
-                  SliverToBoxAdapter(child: HomeSectionHeader(title: '🔥 Lo más visto')),
-                  const SliverToBoxAdapter(child: SizedBox(height: 14)),
-                  SliverToBoxAdapter(child: _buildMovieRow(_mostViewedMovies)),
-                  const SliverToBoxAdapter(child: SizedBox(height: 28)),
-                  SliverToBoxAdapter(child: HomeSectionHeader(title: '🇲🇽 Top en México')),
-                  const SliverToBoxAdapter(child: SizedBox(height: 14)),
-                  SliverToBoxAdapter(child: _buildMovieRow(_topMexicoMovies)),
-                  const SliverToBoxAdapter(child: SizedBox(height: 28)),
-                  SliverToBoxAdapter(child: HomeSectionHeader(title: 'Próximos Estrenos')),
-                  const SliverToBoxAdapter(child: SizedBox(height: 14)),
-                  SliverToBoxAdapter(child: _buildMovieRow(_upcomingMovies)),
-                  const SliverToBoxAdapter(child: SizedBox(height: 28)),
-                  SliverToBoxAdapter(child: HomeSectionHeader(title: 'Aclamadas por la crítica')),
-                  const SliverToBoxAdapter(child: SizedBox(height: 14)),
-                  SliverToBoxAdapter(child: _buildMovieRow(_topRatedMovies)),
-                  const SliverToBoxAdapter(child: SizedBox(height: 28)),
-                  SliverToBoxAdapter(child: HomeSectionHeader(title: 'Reseñas recientes')),
-                  const SliverToBoxAdapter(child: SizedBox(height: 14)),
-                  SliverToBoxAdapter(child: _buildReviewsSection()),
-                  const SliverToBoxAdapter(child: SizedBox(height: 100)),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                SliverToBoxAdapter(child: _buildReviewsCarousel(context, _recentReviews)),
+
+                // Reseñas desde la base de datos local (si existen)
+                if (_dbReviews.isNotEmpty) ...[
+                  const SliverToBoxAdapter(child: SizedBox(height: 36)),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 22),
+                      child: Text(
+                        'Reseñas Recientes (Locales)',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                  SliverToBoxAdapter(child: _buildReviewsCarousel(context, _dbReviews)),
                 ],
+
+                const SliverToBoxAdapter(child: SizedBox(height: 100)),
+              ],
               ),
             ),
       bottomNavigationBar: const HomeBottomNav(),

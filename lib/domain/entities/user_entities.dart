@@ -120,7 +120,14 @@ class UserEntity {
     );
   }
 
-  String get fullName => '$nombres $apellidos'.trim();
+  String get fullName {
+    final n = nombres?.trim() ?? '';
+    final a = apellidos?.trim() ?? '';
+    if (a.isEmpty || n.toLowerCase().contains(a.toLowerCase())) {
+      return n;
+    }
+    return '$n $a'.trim();
+  }
   String get displayName => fullName.isNotEmpty ? fullName : email;
   bool get hasCompletedProfile => nombres != null && apellidos != null;
   bool get isAdmin => nivelPermiso != null;

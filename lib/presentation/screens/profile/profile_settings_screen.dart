@@ -341,7 +341,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     final exito = await _userRepository.updateProfileInfo(
                       userId: widget.currentUser!.id,
                       nombres: fullNameController.text.trim(),
-                      apellidos: widget.currentUser!.apellidos ?? '',
+                      apellidos: '',
                       alias: aliasController.text.trim(),
                       telefono: phoneController.text.trim(),
                     );
@@ -351,7 +351,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     if (exito) {
                       final updatedUser = widget.currentUser!.copyWith(
                         nombres: fullNameController.text.trim(),
-                        apellidos: widget.currentUser!.apellidos ?? '',
+                        apellidos: '',
                         telefono: phoneController.text.trim(),
                         alias: aliasController.text.trim(),
                       );

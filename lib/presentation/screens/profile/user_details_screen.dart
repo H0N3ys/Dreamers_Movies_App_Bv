@@ -17,42 +17,67 @@ class UserDetailsScreen extends StatefulWidget {
   State<UserDetailsScreen> createState() => _UserDetailsScreenState();
 }
 
-class _UserDetailsScreenState extends State<UserDetailsScreen> {
+class _UserDetailsScreenState extends State<UserDetailsScreen>
+    with SingleTickerProviderStateMixin {
   final UserRepository _userRepository = UserRepository();
   final DatabaseHelper _dbHelper = DatabaseHelper();
-  
+
   UserEntity? _currentUser;
+
+  // Usa el getter fullName de UserEntity (ya corregido para evitar
+  // apellidos "sobrantes" de datos antiguos).
+  String get _fullName => _currentUser?.fullName ?? '';
   List<Map<String, dynamic>> _chartData = [];
   bool _isLoading = true;
+
+  int? _touchedIndex;
+
+  late final AnimationController _chartAnimController;
+  late final Animation<double> _chartAnimation;
 
   @override
   void initState() {
     super.initState();
+    _chartAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1100),
+    );
+    _chartAnimation = CurvedAnimation(
+      parent: _chartAnimController,
+      curve: Curves.easeOutCubic,
+    );
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _chartAnimController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
     try {
       final user = await _userRepository.getCurrentUser();
-      
+
       if (user != null) {
         final prefs = await SharedPreferences.getInstance();
         final activeProfileId = prefs.getInt('active_profile_id');
         if (activeProfileId != null) {
           final int idPerfil = activeProfileId;
           final chartData = await _dbHelper.getFavoriteGenresData(idPerfil);
-          
+
           if (mounted) {
             setState(() {
               _currentUser = user;
               _chartData = chartData;
               _isLoading = false;
             });
+            _chartAnimController.forward(from: 0);
           }
           return;
         }
       }
-      
+
       if (mounted) setState(() => _isLoading = false);
     } catch (e) {
       debugPrint('Error cargando detalles del usuario: $e');
@@ -71,6 +96,21 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     return maxVal + 2;
   }
 
+  // Paleta usada para dar variedad de color por barra (efecto premium)
+  static const List<List<Color>> _barGradients = [
+    [Color(0xFFFFC371), Color(0xFFFF5F6D)],
+    [Color(0xFF43CBFF), Color(0xFF9708CC)],
+    [Color(0xFF56CCF2), Color(0xFF2F80ED)],
+    [Color(0xFFF7971E), Color(0xFFFFD200)],
+    [Color(0xFF00F5A0), Color(0xFF00D9F5)],
+    [Color(0xFFFF6A88), Color(0xFFFF99AC)],
+    [Color(0xFFA18CD1), Color(0xFFFBC2EB)],
+    [Color(0xFF00C6FB), Color(0xFF005BEA)],
+  ];
+
+  List<Color> _gradientFor(int index) =>
+      _barGradients[index % _barGradients.length];
+
   // 🔥 FUNCIÓN PARA GENERAR EL PDF
   Future<void> _generateAndPrintPdf() async {
     if (_currentUser == null) return;
@@ -88,13 +128,13 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
               pw.SizedBox(height: 20),
               pw.Text('Datos del Usuario:', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
               pw.SizedBox(height: 10),
-              pw.Text('Nombre: ${_currentUser!.nombres} ${_currentUser!.apellidos}'),
+              pw.Text('Nombre: $_fullName'),
               pw.Text('Correo: ${_currentUser!.email}'),
               pw.Text('Teléfono: ${(_currentUser!.telefono == null || _currentUser!.telefono!.isEmpty) ? "No registrado" : _currentUser!.telefono}'),
               pw.SizedBox(height: 30),
               pw.Text('Estadísticas de Películas Favoritas:', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
               pw.SizedBox(height: 10),
-              
+
               if (_chartData.isEmpty)
                 pw.Text('No hay películas guardadas aún.')
               else
@@ -150,7 +190,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                           children: [
                             const Text('INFORMACIÓN PERSONAL', style: TextStyle(color: Colors.white54, fontSize: 12, letterSpacing: 1.5)),
                             const SizedBox(height: 15),
-                            _buildInfoRow(Icons.person, 'Nombre completo', '${_currentUser!.nombres} ${_currentUser!.apellidos}'),
+                            _buildInfoRow(Icons.person, 'Nombre completo', _fullName),
                             const SizedBox(height: 15),
                             _buildInfoRow(Icons.email, 'Correo electrónico', _currentUser!.email),
                             const SizedBox(height: 15),
@@ -158,107 +198,13 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                           ],
                         ),
                       ),
-                      
+
                       const SizedBox(height: 40),
                       const Text('TUS CATEGORÍAS FAVORITAS', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 20),
 
-                      // GRÁFICA DE BARRAS EN VIVO
-                     // 🔥 GRÁFICA DE BARRAS INSANA EN VIVO 🔥
-                      Container(
-                        height: 280, // Un poco más alta
-                        padding: const EdgeInsets.only(top: 30, right: 25, bottom: 10, left: 10),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [Colors.black.withOpacity(0.6), Colors.black.withOpacity(0.3)],
-                          ),
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(color: Colors.white12),
-                          boxShadow: [
-                            BoxShadow(color: Colors.black.withOpacity(0.4), blurRadius: 15, offset: const Offset(0, 10)),
-                          ],
-                        ),
-                        child: _chartData.isEmpty 
-                          ? const Center(child: Text('Aún no tienes películas favoritas', style: TextStyle(color: Colors.white54)))
-                          : BarChart(
-                              BarChartData(
-                                alignment: BarChartAlignment.spaceAround,
-                                maxY: _getMaxY(),
-                                // 🔥 Cuadriculado sutil de fondo
-                                gridData: FlGridData(
-                                  show: true,
-                                  drawVerticalLine: false,
-                                  horizontalInterval: 1, // Una línea por cada película
-                                  getDrawingHorizontalLine: (value) => FlLine(
-                                    color: Colors.white.withOpacity(0.05),
-                                    strokeWidth: 1,
-                                    dashArray: [5, 5], // Efecto de línea punteada
-                                  ),
-                                ),
-                                titlesData: FlTitlesData(
-                                  show: true,
-                                  bottomTitles: AxisTitles(
-                                    sideTitles: SideTitles(
-                                      showTitles: true,
-                                      getTitlesWidget: (double value, TitleMeta meta) {
-                                        int index = value.toInt();
-                                        if (index < 0 || index >= _chartData.length) return const SizedBox.shrink();
-                                        String genre = _chartData[index]['genero'].toString();
-                                        String shortName = genre.length >= 3 ? genre.substring(0, 3) : genre;
-                                        return Padding(
-                                          padding: const EdgeInsets.only(top: 12.0),
-                                          child: Text(
-                                            shortName.toUpperCase(),
-                                            style: const TextStyle(color: Colors.amber, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  leftTitles: AxisTitles(
-                                    sideTitles: SideTitles(
-                                      showTitles: true,
-                                      // 🔥 Forzamos a que solo muestre números enteros (1, 2, 3...) sin decimales repetidos
-                                      getTitlesWidget: (value, meta) {
-                                        if (value % 1 != 0 || value == 0) return const SizedBox.shrink();
-                                        return Text(value.toInt().toString(), style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold));
-                                      },
-                                      reservedSize: 30,
-                                    ),
-                                  ),
-                                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                ),
-                                borderData: FlBorderData(show: false),
-                                barGroups: List.generate(_chartData.length, (index) {
-                                  double barValue = double.tryParse(_chartData[index]['total'].toString()) ?? 0;
-                                  return BarChartGroupData(
-                                    x: index,
-                                    barRods: [
-                                      BarChartRodData(
-                                        toY: barValue,
-                                        // 🔥 Degradado de colores para la barra
-                                        gradient: const LinearGradient(
-                                          colors: [Colors.orangeAccent, Colors.amber],
-                                          begin: Alignment.bottomCenter,
-                                          end: Alignment.topCenter,
-                                        ),
-                                        width: 18,
-                                        borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
-                                        backDrawRodData: BackgroundBarChartRodData(
-                                          show: true,
-                                          toY: _getMaxY(),
-                                          color: Colors.white.withOpacity(0.05), // Sombra de la barra al fondo
-                                        )
-                                      ),
-                                    ],
-                                  );
-                                }),
-                              ),
-                            ),
-                      ),
+                      // 🔥🔥 GRÁFICA DE BARRAS PSEUDO-3D ANIMADA 🔥🔥
+                      _buildChartCard(),
 
                       const SizedBox(height: 40),
 
@@ -281,6 +227,215 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                     ],
                   ),
                 ),
+    );
+  }
+
+  // ---------------------------------------------------------------------
+  // 🔥 TARJETA CONTENEDORA DE LA GRÁFICA CON PROFUNDIDAD Y BRILLO
+  // ---------------------------------------------------------------------
+  Widget _buildChartCard() {
+    return Container(
+      height: 300,
+      padding: const EdgeInsets.only(top: 34, right: 26, bottom: 12, left: 8),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.black.withOpacity(0.65),
+            Colors.black.withOpacity(0.35),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        boxShadow: [
+          // sombra profunda para "levantar" la tarjeta
+          BoxShadow(
+            color: Colors.black.withOpacity(0.5),
+            blurRadius: 24,
+            offset: const Offset(0, 16),
+          ),
+          // brillo sutil superior tipo cristal
+          BoxShadow(
+            color: Colors.white.withOpacity(0.03),
+            blurRadius: 1,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          // Brillo diagonal decorativo (glassmorphism)
+          Positioned(
+            top: -40,
+            right: -40,
+            child: Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    Colors.amber.withOpacity(0.12),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          _chartData.isEmpty
+              ? const Center(
+                  child: Text(
+                    'Aún no tienes películas favoritas',
+                    style: TextStyle(color: Colors.white54),
+                  ),
+                )
+              : AnimatedBuilder(
+                  animation: _chartAnimation,
+                  builder: (context, _) {
+                    return BarChart(
+                      _buildBarChartData(_chartAnimation.value),
+                      duration: const Duration(milliseconds: 250),
+                    );
+                  },
+                ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------
+  // 🔥 DATA DE LA GRÁFICA CON EFECTO 3D (barras dobles: sombra + frente)
+  // ---------------------------------------------------------------------
+  BarChartData _buildBarChartData(double animValue) {
+    final maxY = _getMaxY();
+
+    return BarChartData(
+      alignment: BarChartAlignment.spaceAround,
+      maxY: maxY,
+      minY: 0,
+      groupsSpace: 22,
+      gridData: FlGridData(
+        show: true,
+        drawVerticalLine: false,
+        horizontalInterval: 1,
+        getDrawingHorizontalLine: (value) => FlLine(
+          color: Colors.white.withOpacity(0.05),
+          strokeWidth: 1,
+          dashArray: const [5, 5],
+        ),
+      ),
+      titlesData: FlTitlesData(
+        show: true,
+        bottomTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            getTitlesWidget: (double value, TitleMeta meta) {
+              int index = value.toInt();
+              if (index < 0 || index >= _chartData.length) return const SizedBox.shrink();
+              String genre = _chartData[index]['genero'].toString();
+              String shortName = genre.length >= 3 ? genre.substring(0, 3) : genre;
+              final isTouched = _touchedIndex == index;
+              return Padding(
+                padding: const EdgeInsets.only(top: 12.0),
+                child: AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 200),
+                  style: TextStyle(
+                    color: isTouched ? Colors.white : _gradientFor(index).first,
+                    fontSize: isTouched ? 12 : 10,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1,
+                  ),
+                  child: Text(shortName.toUpperCase()),
+                ),
+              );
+            },
+          ),
+        ),
+        leftTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            getTitlesWidget: (value, meta) {
+              if (value % 1 != 0 || value == 0) return const SizedBox.shrink();
+              return Text(
+                value.toInt().toString(),
+                style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold),
+              );
+            },
+            reservedSize: 30,
+          ),
+        ),
+        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+      ),
+      borderData: FlBorderData(show: false),
+      barTouchData: BarTouchData(
+        touchTooltipData: BarTouchTooltipData(
+          getTooltipColor: (_) => const Color(0xD9000000),
+          tooltipBorderRadius: BorderRadius.circular(12),
+          tooltipPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          getTooltipItem: (group, groupIndex, rod, rodIndex) {
+            final genre = _chartData[group.x.toInt()]['genero'].toString();
+            return BarTooltipItem(
+              '$genre\n',
+              const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+              children: [
+                TextSpan(
+                  text: '${rod.toY.toInt()} guardadas',
+                  style: TextStyle(color: _gradientFor(group.x.toInt()).first, fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+              ],
+            );
+          },
+        ),
+        touchCallback: (event, response) {
+          setState(() {
+            if (!event.isInterestedForInteractions || response == null || response.spot == null) {
+              _touchedIndex = null;
+            } else {
+              _touchedIndex = response.spot!.touchedBarGroupIndex;
+            }
+          });
+        },
+      ),
+      barGroups: List.generate(_chartData.length, (index) {
+        double barValue = double.tryParse(_chartData[index]['total'].toString()) ?? 0;
+        final animatedValue = barValue * animValue;
+        final isTouched = _touchedIndex == index;
+        final colors = _gradientFor(index);
+
+        return BarChartGroupData(
+          x: index,
+          barRods: [
+            BarChartRodData(
+              toY: animatedValue,
+              width: isTouched ? 22 : 18,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+              gradient: LinearGradient(
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+                colors: isTouched
+                    ? colors
+                    : colors.map((c) => c.withOpacity(0.85)).toList(),
+              ),
+              // 🔥 Efecto de "profundidad" detrás de la barra (fake 3D shadow bar)
+              rodStackItems: [
+                BarChartRodStackItem(
+                  0,
+                  animatedValue,
+                  colors.last.withOpacity(0.0),
+                ),
+              ],
+              backDrawRodData: BackgroundBarChartRodData(
+                show: true,
+                toY: maxY,
+                color: Colors.white.withOpacity(0.04),
+              ),
+            ),
+          ],
+          showingTooltipIndicators: isTouched ? [0] : [],
+        );
+      }),
     );
   }
 
