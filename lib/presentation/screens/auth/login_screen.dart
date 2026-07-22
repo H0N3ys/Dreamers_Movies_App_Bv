@@ -110,8 +110,14 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         );
 
+        final activeProfileId = await _userRepository.ensureActiveProfile(user.id);
+
         if (mounted) {
-          context.go('/');
+          if (activeProfileId != null) {
+            context.go('/profile-picker');
+          } else {
+            context.go('/');
+          }
         }
       } else {
         _showError('Contraseña incorrecta. Inténtalo de nuevo.');
@@ -157,8 +163,8 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         );
 
-        
-        context.go('/'); 
+        await _userRepository.ensureActiveProfile(user.id);
+        context.go('/profile-picker'); 
       }
     } catch (e) {
       print('Error Google Sign-In: $e');

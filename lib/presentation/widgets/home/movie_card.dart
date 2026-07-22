@@ -49,12 +49,9 @@ class _MovieCardState extends State<MovieCard> {
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
+        onTap: widget.onTap,
         onTapDown: (_) => setState(() => _isHovered = true),
-        onTapUp: (_) {
-          setState(() => _isHovered = false);
-          
-          if (widget.onTap != null) widget.onTap!(); 
-        },
+        onTapUp: (_) => setState(() => _isHovered = false),
         onTapCancel: () => setState(() => _isHovered = false),
         child: AnimatedScale(
           scale: _isHovered ? 1.03 : 1.0, 

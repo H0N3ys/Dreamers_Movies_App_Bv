@@ -13,6 +13,8 @@ import 'package:dreamers_movies_app_bv/presentation/screens/profile/profile_scre
 import 'package:dreamers_movies_app_bv/presentation/screens/movies/movie_details_screen.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/movies/saved_screen.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/profile/user_details_screen.dart';
+import 'package:dreamers_movies_app_bv/presentation/screens/profile/profile_picker_screen.dart';
+import 'package:dreamers_movies_app_bv/presentation/screens/movies/actor_details_screen.dart';
 
 // Importa tu nueva pantalla de error y el archivo donde está tu logo animado (Ajusta la ruta si la guardaste en otra carpeta)
 import 'package:dreamers_movies_app_bv/presentation/screens/cinexa_error_screen.dart';
@@ -30,11 +32,13 @@ final appRouter = GoRouter(
     final prefs = await SharedPreferences.getInstance();
     final tieneCuenta = prefs.getBool('is_logged_in') ?? false;
     final estaDesbloqueado = prefs.getBool('session_unlocked') ?? false;
+    final activeProfileId = prefs.getInt('active_profile_id');
 
     final isGoingToLogin = state.matchedLocation == '/login';
     final isGoingToRegister = state.matchedLocation == '/register';
     final isGoingToSplash = state.matchedLocation == '/splash';
     final isGoingToLocalAuth = state.matchedLocation == '/local-auth';
+    final isGoingToProfilePicker = state.matchedLocation == '/profile-picker';
 
     // Agregamos las rutas de error aquí para que el redirect no las bloquee si llegan a saltar
     final isGoingToError =
@@ -56,6 +60,17 @@ final appRouter = GoRouter(
           !isGoingToError) {
         return '/login';
       }
+    }
+
+    if (tieneCuenta && estaDesbloqueado && activeProfileId == null && !isGoingToProfilePicker) {
+      return '/profile-picker';
+    }
+
+    if (tieneCuenta &&
+        estaDesbloqueado &&
+        activeProfileId != null &&
+        isGoingToProfilePicker) {
+      return '/';
     }
 
     if (tieneCuenta &&
@@ -112,11 +127,24 @@ final appRouter = GoRouter(
       builder: (context, state) => const ProfileScreen(),
     ),
     GoRoute(
+      path: '/profile-picker',
+      name: ProfilePickerScreen.name,
+      builder: (context, state) => const ProfilePickerScreen(),
+    ),
+    GoRoute(
       path: '/movie-details',
       name: 'movie-details',
       builder: (context, state) {
         final movie = state.extra as Movie;
         return MovieDetailsScreen(movie: movie);
+      },
+    ),
+    GoRoute(
+      path: '/actor-details',
+      name: ActorDetailsScreen.name,
+      builder: (context, state) {
+        final actor = state.extra as Map<String, dynamic>;
+        return ActorDetailsScreen(actor: actor);
       },
     ),
     GoRoute(

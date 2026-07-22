@@ -1,10 +1,10 @@
-
 class UserEntity {
   final String id;
   final String email;
   final String? nombres;
   final String? apellidos;
   final String? telefono;
+  final String? alias;
   final String? avatarUrl;
   final String? idiomaPreferido;
   final bool restriccionInfantil;
@@ -12,7 +12,7 @@ class UserEntity {
   final DateTime? lastSignInAt;
   final bool isEmailConfirmed;
   final String? accessToken;
-  final int? nivelPermiso; 
+  final int? nivelPermiso;
 
   const UserEntity({
     required this.id,
@@ -20,6 +20,7 @@ class UserEntity {
     this.nombres,
     this.apellidos,
     this.telefono,
+    this.alias,
     this.avatarUrl,
     this.idiomaPreferido,
     this.restriccionInfantil = false,
@@ -30,7 +31,6 @@ class UserEntity {
     this.nivelPermiso,
   });
 
-  
   factory UserEntity.fromJson(Map<String, dynamic> json) {
     return UserEntity(
       id: json['id_usuario'].toString(),
@@ -38,26 +38,32 @@ class UserEntity {
       nombres: json['nombres'] as String?,
       apellidos: json['apellidos'] as String?,
       telefono: json['telefono'] as String?,
-      createdAt: json['fecha_registro'] != null 
-          ? DateTime.tryParse(json['fecha_registro']) 
+      alias: json['apodo']?.toString() ?? json['nombres']?.toString() ?? '',
+      createdAt: json['fecha_registro'] != null
+          ? DateTime.tryParse(json['fecha_registro'])
           : null,
       isEmailConfirmed: true,
     );
   }
 
-  
-  factory UserEntity.fromPerfil(Map<String, dynamic> usuario, Map<String, dynamic> perfil) {
+  factory UserEntity.fromPerfil(
+    Map<String, dynamic> usuario,
+    Map<String, dynamic> perfil,
+  ) {
     return UserEntity(
       id: usuario['id_usuario'].toString(),
       email: usuario['email'] ?? '',
-      nombres: perfil['nombre_perfil'] ?? usuario['nombres'],
+      nombres: usuario['nombres']?.toString() ?? '',
       apellidos: usuario['apellidos'] as String?,
       telefono: usuario['telefono'] as String?,
-      avatarUrl: perfil['avatar_url'] as String?,
+      alias:
+          usuario['apodo']?.toString() ?? usuario['nombres']?.toString() ?? '',
+      avatarUrl:
+          perfil['avatar_url']?.toString() ?? usuario['avatar_url']?.toString(),
       idiomaPreferido: perfil['idioma_preferido'] as String?,
       restriccionInfantil: perfil['restriccion_infantil'] == 1,
-      createdAt: usuario['fecha_registro'] != null 
-          ? DateTime.tryParse(usuario['fecha_registro']) 
+      createdAt: usuario['fecha_registro'] != null
+          ? DateTime.tryParse(usuario['fecha_registro'])
           : null,
       isEmailConfirmed: true,
     );
@@ -70,6 +76,7 @@ class UserEntity {
       'nombres': nombres,
       'apellidos': apellidos,
       'telefono': telefono,
+      'apodo': alias,
       'avatar_url': avatarUrl,
       'idioma_preferido': idiomaPreferido,
       'restriccion_infantil': restriccionInfantil ? 1 : 0,
@@ -85,6 +92,7 @@ class UserEntity {
     String? nombres,
     String? apellidos,
     String? telefono,
+    String? alias,
     String? avatarUrl,
     String? idiomaPreferido,
     bool? restriccionInfantil,
@@ -100,6 +108,7 @@ class UserEntity {
       nombres: nombres ?? this.nombres,
       apellidos: apellidos ?? this.apellidos,
       telefono: telefono ?? this.telefono,
+      alias: alias ?? this.alias,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       idiomaPreferido: idiomaPreferido ?? this.idiomaPreferido,
       restriccionInfantil: restriccionInfantil ?? this.restriccionInfantil,

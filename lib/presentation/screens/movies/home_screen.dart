@@ -9,21 +9,14 @@ import 'package:dreamers_movies_app_bv/domain/datasources/local_reviews_datasour
 import 'package:dreamers_movies_app_bv/domain/datasources/movie_datasources.dart';
 import 'package:dreamers_movies_app_bv/domain/entities/movie_entities.dart';
 import 'package:dreamers_movies_app_bv/infrastructure/datasources/tmdb_datasource.dart';
-import 'package:dreamers_movies_app_bv/domain/datasources/local_reviews_datasource.dart';
-import 'package:dreamers_movies_app_bv/domain/datasources/database_helper.dart';
-import 'package:dio/dio.dart';
-import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_header.dart';
+import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_bottom_nav.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_category_filter.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_header.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_reviews.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_search_bar.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_section_header.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/movie_card.dart';
-import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_bottom_nav.dart';
-import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_reviews.dart';
-// 🔥 AQUÍ ESTÁ LA IMPORTACIÓN QUE FALTABA 🔥
-import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_banner_carousel.dart';
-import 'package:dreamers_movies_app_bv/presentation/widgets/shared/app_refresh_indicator.dart';
+import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
 
 class HomeScreen extends StatefulWidget {
   static const name = 'home-screen';
@@ -36,7 +29,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final MovieDatasources _movieDatasource = TmdbDatasource();
-  final LocalReviewsDatasource _reviewsDatasource = LocalReviewsDatasource();
   final DatabaseHelper _dbHelper = DatabaseHelper();
 
   List<Movie> _nowPlayingMovies = [];
@@ -99,9 +91,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadInitialData();
-    
-    // SABOTAJE TEMPORAL
-    
   }
 
   @override
@@ -127,10 +116,10 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted) return;
 
       setState(() {
-        _nowPlayingMovies = movieResults[0] as List<Movie>;
-        _popularMoviesApi = movieResults[1] as List<Movie>;
-        _topRatedMovies = movieResults[2] as List<Movie>;
-        _upcomingMovies = movieResults[3] as List<Movie>;
+        _nowPlayingMovies = movieResults[0];
+        _popularMoviesApi = movieResults[1];
+        _topRatedMovies = movieResults[2];
+        _upcomingMovies = movieResults[3];
         _mostViewedMovies = mostViewedMovies;
         _topMexicoMovies = topMexicoMovies;
 
@@ -149,32 +138,28 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoadingMovies = false);
-      if (mounted) {
-        // Primero verificamos si es un error 404 de TMDB
-        if (e is DioException && e.response?.statusCode == 404) {
-          context.go('/error-404'); 
-          return; // Salimos de la función
-        }
-
-        // Si no fue 404, checamos si es falta de internet
-        final errorString = e.toString().toLowerCase();
-        if (errorString.contains('failed host lookup') || 
-            errorString.contains('socketexception') || 
-            errorString.contains('connection error')) {
-          context.go('/no-connection');
-        } else {
-          // Si no es internet ni 404, asumimos que es el servidor (500)
-          context.go('/error-500');
-        }
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al cargar datos: $e')),
+      );
     }
   }
 
-  /// Recarga todos los datos de la Home (películas + reseñas locales).
-  /// Este es el callback que dispara el pull-to-refresh.
-  Future<void> _handlePullToRefresh() async {
-    await _loadInitialData();
-    await _loadDBReviews();
+  Future<List<Movie>> _loadMostViewedMovies() async {
+    try {
+      final popular = await _movieDatasource.getPopular(page: 2);
+      return popular.take(10).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<List<Movie>> _loadTopMexicoMovies() async {
+    try {
+      final nowPlaying = await _movieDatasource.getNowPlaying(page: 2);
+      return nowPlaying.take(10).toList();
+    } catch (_) {
+      return [];
+    }
   }
 
   Future<void> _loadStaticReviews() async {
@@ -318,9 +303,9 @@ class _HomeScreenState extends State<HomeScreen> {
           itemCount: movies.length,
           itemBuilder: (context, index) {
             final movie = movies[index];
-            return GestureDetector(
+            return MovieCard(
+              movie: movie,
               onTap: () => context.pushNamed('movie-details', extra: movie),
-              child: MovieCard(movie: movie),
             );
           },
         ),
@@ -354,116 +339,59 @@ class _HomeScreenState extends State<HomeScreen> {
       extendBody: true,
       body: _isLoadingMovies
           ? const Center(child: CircularProgressIndicator(color: Colors.white))
-          : AppRefreshIndicator(
-              onRefresh: _handlePullToRefresh,
+          : SafeArea(
+              bottom: false,
               child: CustomScrollView(
-              // AlwaysScrollableScrollPhysics es necesario para que el
-              // pull-to-refresh funcione incluso si el contenido no llena
-              // toda la pantalla (poco contenido / pantallas grandes).
-              physics: const BouncingScrollPhysics(
-                parent: AlwaysScrollableScrollPhysics(),
-              ),
-              slivers: [
-                SliverAppBar(
-                  pinned: true,
-                  floating: false,
-                  elevation: 0,
-                  backgroundColor: AppColors.secondaryColor.withAlpha(200),
-                  toolbarHeight: 70,
-                  flexibleSpace: ClipRect(
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-                      child: Container(
-                        color: Colors.transparent,
-                      ),
-                    ),
-                  ),
-                  title: const HomeHeader(),
-                  titleSpacing: 0,
-                ),
-
-                const SliverToBoxAdapter(child: SizedBox(height: 10)),
-                // 🔥 AQUÍ SE USA EL NUEVO COMPONENTE 🔥
-                SliverToBoxAdapter(child: HomeBannerCarousel(movies: _nowPlayingMovies.take(6).toList())),
-
-                const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                const SliverToBoxAdapter(child: HomeSectionHeader(title: 'Explorar')),
-                const SliverToBoxAdapter(child: SizedBox(height: 14)),
-                SliverToBoxAdapter(
-                  child: HomeCategoryFilter(
-                    categories: categoryNames,
-                    selectedIndex: _selectedCategoryIndex,
-                    onCategorySelected: _filterByCategory,
-                  ),
-                ),
-
-                const SliverToBoxAdapter(child: SizedBox(height: 28)),
-                SliverToBoxAdapter(
-                  child: HomeSectionHeader(
-                    title: _selectedCategoryIndex == 0 ? 'Tendencias actuales' : 'Resultados de tu filtro',
-                  ),
-                ),
-                const SliverToBoxAdapter(child: SizedBox(height: 14)),
-                SliverToBoxAdapter(child: _buildMovieRow(_filteredMovies, activeGenreId: currentGenreId)),
-
-                const SliverToBoxAdapter(child: SizedBox(height: 28)),
-                const SliverToBoxAdapter(child: HomeSectionHeader(title: 'Próximos Estrenos')),
-                const SliverToBoxAdapter(child: SizedBox(height: 14)),
-                SliverToBoxAdapter(child: _buildMovieRow(_upcomingMovies)),
-
-                const SliverToBoxAdapter(child: SizedBox(height: 28)),
-                const SliverToBoxAdapter(child: HomeSectionHeader(title: 'Aclamadas por la crítica')),
-                const SliverToBoxAdapter(child: SizedBox(height: 14)),
-                SliverToBoxAdapter(child: _buildMovieRow(_topRatedMovies)),
-                
-                const SliverToBoxAdapter(child: SizedBox(height: 28)),
-                const SliverToBoxAdapter(child: HomeSectionHeader(title: 'Comedia para reír sin parar')),
-                const SliverToBoxAdapter(child: SizedBox(height: 14)),
-                SliverToBoxAdapter(child: _buildMovieRow(_comedyMovies, activeGenreId: 35)),
-
-                const SliverToBoxAdapter(child: SizedBox(height: 28)),
-                const SliverToBoxAdapter(child: HomeSectionHeader(title: 'Noches de Terror')),
-                const SliverToBoxAdapter(child: SizedBox(height: 14)),
-                SliverToBoxAdapter(child: _buildMovieRow(_horrorMovies, activeGenreId: 27)),
-
-                // Actividad de la comunidad (reseñas estáticas)
-                const SliverToBoxAdapter(child: SizedBox(height: 36)),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 22),
-                    child: Text(
-                      'Actividad de la comunidad',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                const SliverToBoxAdapter(child: SizedBox(height: 16)),
-                SliverToBoxAdapter(child: _buildReviewsCarousel(context, _recentReviews)),
-
-                // Reseñas desde la base de datos local (si existen)
-                if (_dbReviews.isNotEmpty) ...[
-                  const SliverToBoxAdapter(child: SizedBox(height: 36)),
+                physics: const BouncingScrollPhysics(),
+                slivers: [
+                  const SliverToBoxAdapter(child: SizedBox(height: 20)),
+                  const SliverToBoxAdapter(child: HomeHeader()),
+                  const SliverToBoxAdapter(child: SizedBox(height: 20)),
+                  const SliverToBoxAdapter(child: HomeSearchBar()),
+                  const SliverToBoxAdapter(child: SizedBox(height: 20)),
+                  SliverToBoxAdapter(child: _buildHeroCarousel(_nowPlayingMovies.take(6).toList())),
+                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
                   SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 22),
-                      child: Text(
-                        'Reseñas Recientes (Locales)',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                    child: HomeSectionHeader(title: 'Explorar', onSeeAll: () => context.go('/search')),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 14)),
+                  SliverToBoxAdapter(
+                    child: HomeCategoryFilter(
+                      categories: categoryNames,
+                      selectedIndex: _selectedCategoryIndex,
+                      onCategorySelected: _filterByCategory,
                     ),
                   ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
-                  SliverToBoxAdapter(child: _buildReviewsCarousel(context, _dbReviews)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 28)),
+                  SliverToBoxAdapter(
+                    child: HomeSectionHeader(
+                      title: _selectedCategoryIndex == 0 ? 'Tendencias actuales' : 'Resultados de tu filtro',
+                    ),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 14)),
+                  SliverToBoxAdapter(child: _buildMovieRow(_filteredMovies)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 28)),
+                  SliverToBoxAdapter(child: HomeSectionHeader(title: '🔥 Lo más visto')),
+                  const SliverToBoxAdapter(child: SizedBox(height: 14)),
+                  SliverToBoxAdapter(child: _buildMovieRow(_mostViewedMovies)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 28)),
+                  SliverToBoxAdapter(child: HomeSectionHeader(title: '🇲🇽 Top en México')),
+                  const SliverToBoxAdapter(child: SizedBox(height: 14)),
+                  SliverToBoxAdapter(child: _buildMovieRow(_topMexicoMovies)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 28)),
+                  SliverToBoxAdapter(child: HomeSectionHeader(title: 'Próximos Estrenos')),
+                  const SliverToBoxAdapter(child: SizedBox(height: 14)),
+                  SliverToBoxAdapter(child: _buildMovieRow(_upcomingMovies)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 28)),
+                  SliverToBoxAdapter(child: HomeSectionHeader(title: 'Aclamadas por la crítica')),
+                  const SliverToBoxAdapter(child: SizedBox(height: 14)),
+                  SliverToBoxAdapter(child: _buildMovieRow(_topRatedMovies)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 28)),
+                  SliverToBoxAdapter(child: HomeSectionHeader(title: 'Reseñas recientes')),
+                  const SliverToBoxAdapter(child: SizedBox(height: 14)),
+                  SliverToBoxAdapter(child: _buildReviewsSection()),
+                  const SliverToBoxAdapter(child: SizedBox(height: 100)),
                 ],
-
-                const SliverToBoxAdapter(child: SizedBox(height: 100)),
-              ],
               ),
             ),
       bottomNavigationBar: const HomeBottomNav(),

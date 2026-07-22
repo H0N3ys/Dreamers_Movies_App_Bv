@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:dreamers_movies_app_bv/resources/styles/styles.dart';
 
@@ -6,6 +8,7 @@ class ProfileListItem extends StatelessWidget {
   final String? subtitle;
   final bool isSelected;
   final bool isAddButton;
+  final String? avatarUrl;
   final VoidCallback onTap;
 
   const ProfileListItem({
@@ -14,8 +17,29 @@ class ProfileListItem extends StatelessWidget {
     this.subtitle,
     this.isSelected = false,
     this.isAddButton = false,
+    this.avatarUrl,
     required this.onTap,
   });
+
+  ImageProvider<Object>? _buildAvatarProvider() {
+    if (isAddButton) return null;
+
+    final source = avatarUrl?.trim() ?? '';
+    if (source.isEmpty) {
+      return NetworkImage('https://i.pravatar.cc/150?u=${title.replaceAll(' ', '')}');
+    }
+
+    if (source.startsWith('http')) {
+      return NetworkImage(source);
+    }
+
+    final file = File(source);
+    if (file.existsSync()) {
+      return FileImage(file);
+    }
+
+    return NetworkImage('https://i.pravatar.cc/150?u=${title.replaceAll(' ', '')}');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,24 +49,13 @@ class ProfileListItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         child: Row(
           children: [
-            // El Avatar
             CircleAvatar(
               radius: 24,
-              backgroundColor: isAddButton
-                  ? Colors.black26
-                  : Colors.transparent,
-              child: isAddButton
-                  ? const Icon(Icons.add, color: Colors.white54, size: 28)
-                  : null,
-              backgroundImage: isAddButton
-                  ? null
-                  : NetworkImage(
-                      'https://i.pravatar.cc/150?u=${title.replaceAll(' ', '')}',
-                    ),
+              backgroundColor: isAddButton ? Colors.black26 : Colors.transparent,
+              backgroundImage: _buildAvatarProvider(),
+              child: isAddButton ? const Icon(Icons.add, color: Colors.white54, size: 28) : null,
             ),
             const SizedBox(width: 16),
-
-            // Los Textos
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,8 +83,6 @@ class ProfileListItem extends StatelessWidget {
                 ],
               ),
             ),
-
-            // Etiqueta de "Seleccionado"
             if (isSelected)
               Text(
                 'Seleccionado',

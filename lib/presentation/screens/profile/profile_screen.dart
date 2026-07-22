@@ -7,6 +7,7 @@ import 'package:dreamers_movies_app_bv/domain/entities/user_entities.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_bottom_nav.dart';
 import 'package:dreamers_movies_app_bv/presentation/widgets/profile/profile_list_item.dart';
 import 'package:dreamers_movies_app_bv/presentation/screens/profile/profile_settings_screen.dart';
+import 'package:dreamers_movies_app_bv/presentation/screens/profile/profile_picker_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   static const name = 'profile-screen';
@@ -20,8 +21,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final UserRepository _userRepository = UserRepository();
   UserEntity? _currentUser;
   bool _isLoading = true;
-
-  int _currentNavIndex = 3;
 
   @override
   void initState() {
@@ -39,6 +38,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       setState(() => _isLoading = false);
     }
+  }
+
+  void _handleUserUpdated(UserEntity updatedUser) {
+    setState(() {
+      _currentUser = updatedUser;
+      _isLoading = false;
+    });
   }
 
   Future<void> _executeLogout() async {
@@ -119,6 +125,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final String nombrePrincipal = _currentUser?.nombres ?? 'Usuario';
+    final String alias =
+        _currentUser?.alias ?? _currentUser?.nombres ?? 'usuario';
+    final String avatarPath = _currentUser?.avatarUrl ?? '';
 
     return Scaffold(
       backgroundColor: AppColors.secondaryColor,
@@ -135,8 +144,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 context,
                 MaterialPageRoute(
                   // 👇 Asegúrate de que NO haya un "const" antes de ProfileSettingsScreen
-                  builder: (context) =>
-                      ProfileSettingsScreen(currentUser: _currentUser),
+                  builder: (context) => ProfileSettingsScreen(
+                    currentUser: _currentUser,
+                    onUserUpdated: _handleUserUpdated,
+                  ),
                 ),
               );
             },
@@ -157,8 +168,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   // Perfil Real
                   ProfileListItem(
                     title: nombrePrincipal,
-                    subtitle: 'Perfil primario',
+                    subtitle: '@$alias',
                     isSelected: true,
+                    avatarUrl: avatarPath,
                     onTap: () {
                       context.pushNamed('user-details-screen');
                     },
@@ -172,7 +184,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ProfileListItem(
                     title: 'Agregar perfil',
                     isAddButton: true,
-                    onTap: () {},
+                    onTap: () => context.pushNamed(ProfilePickerScreen.name),
                   ),
 
                   const Spacer(),

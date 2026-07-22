@@ -1,13 +1,22 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:dreamers_movies_app_bv/domain/entities/user_entities.dart';
+import 'package:dreamers_movies_app_bv/domain/repositories/user_repositories.dart';
+import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
   final UserEntity? currentUser;
+  final ValueChanged<UserEntity>? onUserUpdated;
 
-  const ProfileSettingsScreen({super.key, this.currentUser});
+  const ProfileSettingsScreen({
+    super.key,
+    this.currentUser,
+    this.onUserUpdated,
+  });
 
   @override
   State<ProfileSettingsScreen> createState() => _ProfileSettingsScreenState();
@@ -15,46 +24,106 @@ class ProfileSettingsScreen extends StatefulWidget {
 
 class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   late String _userName;
+  late String _userAlias;
   late String _userEmail;
   late String _userPhone;
 
   File? _profileImage;
   final ImagePicker _picker = ImagePicker();
+  final UserRepository _userRepository = UserRepository();
 
   @override
   void initState() {
     super.initState();
     _userName = widget.currentUser?.nombres ?? 'Usuario';
-    _userEmail = widget.currentUser?.correo ?? 'Sin correo';
+    _userAlias =
+        widget.currentUser?.alias ?? widget.currentUser?.nombres ?? 'Usuario';
+    _userEmail = widget.currentUser?.email ?? 'Sin correo';
     _userPhone = widget.currentUser?.telefono ?? 'Sin número';
+    _loadPersistedAvatar();
+  }
+
+  Future<void> _loadPersistedAvatar() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedAvatar =
+        prefs.getString('active_profile_avatar') ??
+        prefs.getString('user_avatar') ??
+        '';
+    if (savedAvatar.isEmpty) return;
+
+    final file = File(savedAvatar);
+    if (!await file.exists()) return;
+
+    if (!mounted) return;
+    setState(() {
+      _profileImage = file;
+    });
+  }
+
+  ImageProvider<Object>? _buildAvatarProvider() {
+    if (_profileImage != null) return FileImage(_profileImage!);
+
+    final savedAvatar = widget.currentUser?.avatarUrl ?? '';
+    if (savedAvatar.startsWith('http')) return NetworkImage(savedAvatar);
+    if (savedAvatar.isNotEmpty) {
+      final file = File(savedAvatar);
+      if (file.existsSync()) return FileImage(file);
+    }
+
+    return const NetworkImage('https://i.pravatar.cc/300');
   }
 
   Future<void> _pickImage() async {
     final XFile? pickedFile = await _picker.pickImage(
       source: ImageSource.gallery,
     );
-    if (pickedFile != null) {
-      setState(() {
-        _profileImage = File(pickedFile.path);
-      });
-    }
-  }
+    if (pickedFile == null) return;
 
-  Future<void> _verificarHuellaYCambiarPassword() async {
-    bool autenticado = true;
+    final archivo = File(pickedFile.path);
+    final bytes = await archivo.length();
+    final megas = bytes / (1024 * 1024);
 
-    if (autenticado) {
-      if (!mounted) return;
-      _showChangePasswordSheet(context);
-    } else {
+    if (megas < 0.01 || megas > 5.0) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Autenticación fallida. Intente de nuevo.'),
+          content: Text('⚠️ La imagen debe pesar entre 10 KB y 5 MB.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _profileImage = archivo;
+    });
+
+    if (widget.currentUser == null) return;
+
+    final exito = await _userRepository.updateAvatar(
+      widget.currentUser!.id,
+      archivo.path,
+    );
+
+    if (!mounted) return;
+
+    if (exito) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('✅ Foto de perfil actualizada')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('❌ No se pudo actualizar la foto de perfil'),
           backgroundColor: Colors.red,
         ),
       );
     }
+  }
+
+  Future<void> _verificarHuellaYCambiarPassword() async {
+    if (!mounted) return;
+    _showChangePasswordSheet(context);
   }
 
   @override
@@ -79,7 +148,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               padding: const EdgeInsets.symmetric(vertical: 30),
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                color: Colors.white.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(25),
                 border: Border.all(color: Colors.white12),
               ),
@@ -95,9 +164,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                         ),
                         child: CircleAvatar(
                           radius: 65,
-                          backgroundImage: _profileImage != null
-                              ? FileImage(_profileImage!) as ImageProvider
-                              : const NetworkImage('https://i.pravatar.cc/300'),
+                          backgroundImage: _buildAvatarProvider(),
                         ),
                       ),
                       Positioned(
@@ -137,6 +204,15 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   ),
                   const SizedBox(height: 5),
                   Text(
+                    '@$_userAlias',
+                    style: const TextStyle(
+                      color: Colors.blueAccent,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
                     _userEmail,
                     style: const TextStyle(color: Colors.white54, fontSize: 14),
                   ),
@@ -146,7 +222,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             const SizedBox(height: 30),
             Container(
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                color: Colors.white.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: Colors.white12),
               ),
@@ -176,7 +252,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   }
 
   void _showEditProfileSheet(BuildContext context) {
-    final nameController = TextEditingController(text: _userName);
+    final aliasController = TextEditingController(text: _userAlias);
+    final fullNameController = TextEditingController(text: _userName);
     final emailController = TextEditingController(text: _userEmail);
     final phoneController = TextEditingController(text: _userPhone);
 
@@ -217,14 +294,24 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               ),
               const SizedBox(height: 25),
               TextFormField(
-                controller: nameController,
+                controller: aliasController,
                 style: const TextStyle(color: Colors.white),
-                decoration: _inputDecoration('Nombre de usuario', Icons.person),
+                decoration: _inputDecoration(
+                  'Nombre de usuario',
+                  Icons.alternate_email,
+                ),
+              ),
+              const SizedBox(height: 15),
+              TextFormField(
+                controller: fullNameController,
+                style: const TextStyle(color: Colors.white),
+                decoration: _inputDecoration('Nombre completo', Icons.person),
               ),
               const SizedBox(height: 15),
               TextFormField(
                 controller: emailController,
-                style: const TextStyle(color: Colors.white),
+                enabled: false,
+                style: const TextStyle(color: Colors.white70),
                 decoration: _inputDecoration('Correo electrónico', Icons.email),
               ),
               const SizedBox(height: 15),
@@ -245,13 +332,51 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       borderRadius: BorderRadius.circular(15),
                     ),
                   ),
-                  onPressed: () {
-                    setState(() {
-                      _userName = nameController.text;
-                      _userEmail = emailController.text;
-                      _userPhone = phoneController.text;
-                    });
-                    Navigator.pop(context);
+                  onPressed: () async {
+                    if (widget.currentUser == null) return;
+
+                    final navigator = Navigator.of(context);
+                    final messenger = ScaffoldMessenger.of(context);
+
+                    final exito = await _userRepository.updateProfileInfo(
+                      userId: widget.currentUser!.id,
+                      nombres: fullNameController.text.trim(),
+                      apellidos: widget.currentUser!.apellidos ?? '',
+                      alias: aliasController.text.trim(),
+                      telefono: phoneController.text.trim(),
+                    );
+
+                    if (!mounted) return;
+
+                    if (exito) {
+                      final updatedUser = widget.currentUser!.copyWith(
+                        nombres: fullNameController.text.trim(),
+                        apellidos: widget.currentUser!.apellidos ?? '',
+                        telefono: phoneController.text.trim(),
+                        alias: aliasController.text.trim(),
+                      );
+
+                      setState(() {
+                        _userName = fullNameController.text.trim();
+                        _userAlias = aliasController.text.trim();
+                        _userPhone = phoneController.text.trim();
+                      });
+
+                      widget.onUserUpdated?.call(updatedUser);
+                      navigator.pop();
+                      messenger.showSnackBar(
+                        const SnackBar(
+                          content: Text('✅ Datos actualizados correctamente'),
+                        ),
+                      );
+                    } else {
+                      messenger.showSnackBar(
+                        const SnackBar(
+                          content: Text('❌ Error al actualizar los datos'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
                   },
                   child: const Text(
                     'Guardar cambios',
@@ -268,9 +393,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   }
 
   void _showChangePasswordSheet(BuildContext context) {
+    final currentController = TextEditingController();
+    final newController = TextEditingController();
     bool obscureCurrent = true;
     bool obscureNew = true;
-    String newPassword = "";
+    String newPassword = '';
 
     showModalBottomSheet(
       context: context,
@@ -282,14 +409,13 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       builder: (context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
-            bool hasMinLength = newPassword.length >= 8;
-            bool hasUppercase = newPassword.contains(RegExp(r'[A-Z]'));
-            bool hasNumber = newPassword.contains(RegExp(r'[0-9]'));
-            bool hasSpecial = newPassword.contains(
+            final hasMinLength = newPassword.length >= 8;
+            final hasUppercase = newPassword.contains(RegExp(r'[A-Z]'));
+            final hasNumber = newPassword.contains(RegExp(r'[0-9]'));
+            final hasSpecial = newPassword.contains(
               RegExp(r'[!@#$%^&*(),.?":{}|<>]'),
             );
-
-            bool canSubmit =
+            final canSubmit =
                 hasMinLength && hasUppercase && hasNumber && hasSpecial;
 
             return Padding(
@@ -326,6 +452,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   ),
                   const SizedBox(height: 25),
                   TextFormField(
+                    controller: currentController,
                     obscureText: obscureCurrent,
                     style: const TextStyle(color: Colors.white),
                     decoration:
@@ -348,6 +475,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   ),
                   const SizedBox(height: 15),
                   TextFormField(
+                    controller: newController,
                     obscureText: obscureNew,
                     style: const TextStyle(color: Colors.white),
                     onChanged: (value) =>
@@ -384,15 +512,49 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: canSubmit
                             ? Colors.blueAccent
-                            : Colors.grey.withOpacity(0.5),
+                            : Colors.grey,
                         padding: const EdgeInsets.symmetric(vertical: 15),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(15),
                         ),
                       ),
                       onPressed: canSubmit
-                          ? () {
-                              Navigator.pop(context);
+                          ? () async {
+                              if (widget.currentUser == null) return;
+
+                              final navigator = Navigator.of(context);
+                              final messenger = ScaffoldMessenger.of(context);
+
+                              final actualizado = await _userRepository
+                                  .updateUserPassword(
+                                    userId: widget.currentUser!.id,
+                                    currentPassword: currentController.text
+                                        .trim(),
+                                    newPassword: newController.text.trim(),
+                                  );
+
+                              if (!mounted) return;
+                              navigator.pop();
+
+                              if (actualizado) {
+                                messenger.showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      '✅ Contraseña actualizada con éxito',
+                                    ),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              } else {
+                                messenger.showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      '❌ La contraseña actual es incorrecta',
+                                    ),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
                             }
                           : null,
                       child: const Text(
@@ -417,7 +579,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       labelStyle: const TextStyle(color: Colors.white54),
       prefixIcon: Icon(icon, color: Colors.white54),
       filled: true,
-      fillColor: Colors.white.withOpacity(0.05),
+      fillColor: Colors.white.withValues(alpha: 0.05),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(15),
         borderSide: const BorderSide(color: Colors.white12),
@@ -463,7 +625,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       leading: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white.withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: Colors.white),

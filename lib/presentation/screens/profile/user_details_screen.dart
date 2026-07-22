@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
 import 'package:dreamers_movies_app_bv/domain/repositories/user_repositories.dart';
 import 'package:dreamers_movies_app_bv/domain/entities/user_entities.dart';
@@ -36,16 +36,10 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
       final user = await _userRepository.getCurrentUser();
       
       if (user != null) {
-        final db = await _dbHelper.database;
-        final profileResult = await db.query(
-          'perfil',
-          where: 'id_usuario = ?',
-          whereArgs: [user.id],
-          limit: 1,
-        );
-
-        if (profileResult.isNotEmpty) {
-          final int idPerfil = profileResult.first['id_perfil'] as int;
+        final prefs = await SharedPreferences.getInstance();
+        final activeProfileId = prefs.getInt('active_profile_id');
+        if (activeProfileId != null) {
+          final int idPerfil = activeProfileId;
           final chartData = await _dbHelper.getFavoriteGenresData(idPerfil);
           
           if (mounted) {
