@@ -9,6 +9,8 @@ import 'package:like_button/like_button.dart';
 import 'package:dreamers_movies_app_bv/domain/datasources/database_helper.dart';
 import 'package:dreamers_movies_app_bv/domain/repositories/user_repositories.dart';
 
+import 'package:dreamers_movies_app_bv/presentation/widgets/shared/app_refresh_indicator.dart';
+
 class FavoritesScreen extends StatefulWidget {
   static const name = 'favorites-screen';
   const FavoritesScreen({super.key});
@@ -102,24 +104,33 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         centerTitle: true,
         automaticallyImplyLeading: false,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.amber))
-          : _favoriteMovies.isEmpty
-          ? const Center(
-              child: Text(
-                'Aún no tienes películas favoritas 💔',
-                style: TextStyle(color: Colors.white54, fontSize: 16),
-              ),
-            )
-          : GridView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              physics: const BouncingScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2, 
-                childAspectRatio: 0.65,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-              ),
+      body: AppRefreshIndicator(
+        onRefresh: _loadFavoritesFromDB,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: Colors.amber))
+            : _favoriteMovies.isEmpty
+            ? CustomScrollView(
+                physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                slivers: [
+                  SliverFillRemaining(
+                    child: Center(
+                      child: Text(
+                        'Aún no tienes películas favoritas 💔',
+                        style: TextStyle(color: Colors.white54, fontSize: 16),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : GridView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2, 
+                  childAspectRatio: 0.65,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                ),
               itemCount: _favoriteMovies.length,
               itemBuilder: (context, index) {
                 final movie = _favoriteMovies[index];
@@ -177,6 +188,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 );
               },
             ),
+      ),
       bottomNavigationBar: const HomeBottomNav(), 
     );
   }

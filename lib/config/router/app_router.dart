@@ -68,13 +68,6 @@ final appRouter = GoRouter(
 
     if (tieneCuenta &&
         estaDesbloqueado &&
-        activeProfileId != null &&
-        isGoingToProfilePicker) {
-      return '/';
-    }
-
-    if (tieneCuenta &&
-        estaDesbloqueado &&
         (isGoingToLogin ||
             isGoingToRegister ||
             isGoingToSplash ||

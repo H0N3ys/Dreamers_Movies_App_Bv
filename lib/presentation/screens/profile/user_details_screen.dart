@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:pdf/pdf.dart';
@@ -8,6 +11,9 @@ import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
 import 'package:dreamers_movies_app_bv/domain/repositories/user_repositories.dart';
 import 'package:dreamers_movies_app_bv/domain/entities/user_entities.dart';
 import 'package:dreamers_movies_app_bv/domain/datasources/database_helper.dart';
+import 'package:flutter/rendering.dart';
+
+import 'package:dreamers_movies_app_bv/presentation/widgets/shared/app_refresh_indicator.dart';
 
 class UserDetailsScreen extends StatefulWidget {
   static const name = 'user-details-screen';
@@ -21,6 +27,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen>
     with SingleTickerProviderStateMixin {
   final UserRepository _userRepository = UserRepository();
   final DatabaseHelper _dbHelper = DatabaseHelper();
+  final GlobalKey _chartKey = GlobalKey();
 
   UserEntity? _currentUser;
 
@@ -112,50 +119,72 @@ class _UserDetailsScreenState extends State<UserDetailsScreen>
       _barGradients[index % _barGradients.length];
 
   // 🔥 FUNCIÓN PARA GENERAR EL PDF
-  Future<void> _generateAndPrintPdf() async {
-    if (_currentUser == null) return;
+  
+    Future<void> _generateAndPrintPdf() async {
+  if (_currentUser == null) return;
 
-    final doc = pw.Document();
+  pw.MemoryImage? chartImage;
+  
+  if (_chartData.isNotEmpty) {
+    try {
+      // Convertimos la gráfica a una imagen de altísima calidad (pixelRatio: 3.0)
+      final RenderRepaintBoundary boundary = _chartKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+      final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      final ByteData? byteData = await image.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
 
-    doc.addPage(
-      pw.Page(
-        pageFormat: PdfPageFormat.a4,
-        build: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Header(level: 0, child: pw.Text('Reporte de Perfil - Cinexa', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold))),
-              pw.SizedBox(height: 20),
-              pw.Text('Datos del Usuario:', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
-              pw.SizedBox(height: 10),
-              pw.Text('Nombre: $_fullName'),
-              pw.Text('Correo: ${_currentUser!.email}'),
-              pw.Text('Teléfono: ${(_currentUser!.telefono == null || _currentUser!.telefono!.isEmpty) ? "No registrado" : _currentUser!.telefono}'),
-              pw.SizedBox(height: 30),
-              pw.Text('Estadísticas de Películas Favoritas:', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
-              pw.SizedBox(height: 10),
-
-              if (_chartData.isEmpty)
-                pw.Text('No hay películas guardadas aún.')
-              else
-                pw.TableHelper.fromTextArray(
-                  context: context,
-                  data: <List<String>>[
-                    <String>['Categoría', 'Total Guardadas'],
-                    ..._chartData.map((data) => [data['genero'].toString(), data['total'].toString()]),
-                  ],
-                ),
-            ],
-          );
-        },
-      ),
-    );
-
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => doc.save(),
-      name: 'Reporte_Cinexa_${_currentUser!.nombres}.pdf',
-    );
+      if (byteData == null) {
+        debugPrint('No se pudo convertir la gráfica a PNG.');
+      } else {
+        final Uint8List pngBytes = byteData.buffer.asUint8List(
+          byteData.offsetInBytes,
+          byteData.lengthInBytes,
+        );
+        chartImage = pw.MemoryImage(pngBytes);
+      }
+    } catch (e) {
+      debugPrint("Error capturando gráfica: $e");
+    }
   }
+
+  final doc = pw.Document();
+  doc.addPage(
+    pw.Page(
+      pageFormat: PdfPageFormat.a4,
+      build: (pw.Context context) {
+        return pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Header(level: 0, child: pw.Text('Reporte de Perfil - Cinexa', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold))),
+            pw.SizedBox(height: 20),
+            pw.Text('Datos del Usuario:', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 10),
+            pw.Text('Nombre: $_fullName'),
+            pw.Text('Correo: ${_currentUser!.email}'),
+            pw.Text('Teléfono: ${(_currentUser!.telefono == null || _currentUser!.telefono!.isEmpty) ? "No registrado" : _currentUser!.telefono}'),
+            pw.SizedBox(height: 30),
+            pw.Text('Estadísticas de Películas Favoritas:', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 20),
+            
+            // LA GRÁFICA EN LUGAR DE LA TABLA
+            if (chartImage == null)
+              pw.Text('No hay películas guardadas aún.')
+            else
+              pw.Center(
+                child: pw.Image(chartImage, width: 450, fit: pw.BoxFit.contain), // Tamaño grande sin cortarse
+              ),
+          ],
+        );
+      },
+    ),
+  );
+
+  await Printing.layoutPdf(
+    onLayout: (PdfPageFormat format) async => doc.save(),
+    name: 'Reporte_Cinexa_${_currentUser!.nombres}.pdf',
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -167,12 +196,15 @@ class _UserDetailsScreenState extends State<UserDetailsScreen>
         title: const Text('Detalles de Cuenta', style: TextStyle(color: Colors.white)),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.white))
-          : _currentUser == null
-              ? const Center(child: Text('Error al cargar perfil', style: TextStyle(color: Colors.white)))
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(24.0),
+      body: AppRefreshIndicator(
+        onRefresh: _loadData,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: Colors.white))
+            : _currentUser == null
+                ? const Center(child: Text('Error al cargar perfil', style: TextStyle(color: Colors.white)))
+                : SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                    padding: const EdgeInsets.all(24.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -227,6 +259,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen>
                     ],
                   ),
                 ),
+      ),
     );
   }
 
@@ -234,12 +267,14 @@ class _UserDetailsScreenState extends State<UserDetailsScreen>
   // 🔥 TARJETA CONTENEDORA DE LA GRÁFICA CON PROFUNDIDAD Y BRILLO
   // ---------------------------------------------------------------------
   Widget _buildChartCard() {
-    return Container(
-      height: 300,
-      padding: const EdgeInsets.only(top: 34, right: 26, bottom: 12, left: 8),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
+    return RepaintBoundary(
+      key: _chartKey,
+      child: Container(
+        height: 300,
+        padding: const EdgeInsets.only(top: 34, right: 26, bottom: 12, left: 8),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
             Colors.black.withOpacity(0.65),
@@ -301,7 +336,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen>
                 ),
         ],
       ),
-    );
+    ));
   }
 
   // ---------------------------------------------------------------------

@@ -749,8 +749,12 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
       // Usamos SafeArea solo para proteger el contenido del Notch/Status Bar superior
       body: SafeArea(
         bottom: false,
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
+        child: AppRefreshIndicator(
+          onRefresh: _handlePullToRefresh,
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
           slivers: [
             // 🔥 AQUÍ ESTÁ EL ESPACIO FIJO DEDICADO SOLO PARA EL BOTÓN 🔥
             SliverAppBar(
@@ -1065,6 +1069,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

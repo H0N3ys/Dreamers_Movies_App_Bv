@@ -6,6 +6,8 @@ import 'package:dreamers_movies_app_bv/domain/repositories/user_repositories.dar
 import 'package:dreamers_movies_app_bv/presentation/widgets/profile/profile_list_item.dart';
 import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
 
+import 'package:dreamers_movies_app_bv/presentation/widgets/shared/app_refresh_indicator.dart';
+
 class ProfilePickerScreen extends StatefulWidget {
   static const name = 'profile-picker-screen';
 
@@ -53,6 +55,7 @@ class _ProfilePickerScreenState extends State<ProfilePickerScreen> {
     if (userId == null) return;
 
     final controller = TextEditingController();
+    if (!mounted) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
@@ -112,9 +115,17 @@ class _ProfilePickerScreenState extends State<ProfilePickerScreen> {
       return;
     }
 
+    PaintingBinding.instance.imageCache.clear();
+    PaintingBinding.instance.imageCache.clearLiveImages();
+
     if (!mounted) return;
     setState(() => _activeProfileId = profileId);
-    context.go('/');
+
+    if (context.canPop()) {
+      context.pop(true);
+    } else {
+      context.go('/profile');
+    }
   }
 
   @override
@@ -127,65 +138,69 @@ class _ProfilePickerScreenState extends State<ProfilePickerScreen> {
         title: const Text('Quién está viendo?', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.white))
-          : SafeArea(
-              child: Column(
-                children: [
-                  const SizedBox(height: 12),
-                  Expanded(
-                    child: ListView.separated(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                      itemCount: _profiles.length + 1,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
-                      itemBuilder: (context, index) {
-                        if (index == _profiles.length) {
-                          return InkWell(
-                            onTap: _addProfile,
-                            borderRadius: BorderRadius.circular(18),
-                            child: Container(
-                              padding: const EdgeInsets.all(18),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.04),
-                                borderRadius: BorderRadius.circular(18),
-                                border: Border.all(color: Colors.white12),
+      body: AppRefreshIndicator(
+        onRefresh: _loadProfiles,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: Colors.white))
+            : SafeArea(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: ListView.separated(
+                        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        itemCount: _profiles.length + 1,
+                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        itemBuilder: (context, index) {
+                          if (index == _profiles.length) {
+                            return InkWell(
+                              onTap: _addProfile,
+                              borderRadius: BorderRadius.circular(18),
+                              child: Container(
+                                padding: const EdgeInsets.all(18),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.04),
+                                  borderRadius: BorderRadius.circular(18),
+                                  border: Border.all(color: Colors.white12),
+                                ),
+                                child: const Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 28,
+                                      backgroundColor: Colors.white12,
+                                      child: Icon(Icons.add, color: Colors.white),
+                                    ),
+                                    SizedBox(width: 14),
+                                    Text(
+                                      'Agregar perfil',
+                                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              child: const Row(
-                                children: [
-                                  CircleAvatar(
-                                    radius: 28,
-                                    backgroundColor: Colors.white12,
-                                    child: Icon(Icons.add, color: Colors.white),
-                                  ),
-                                  SizedBox(width: 14),
-                                  Text(
-                                    'Agregar perfil',
-                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                              ),
-                            ),
+                            );
+                          }
+
+                          final profile = _profiles[index];
+                          final profileId = profile['id_perfil'] as int;
+                          final profileName = profile['nombre_perfil']?.toString() ?? 'Perfil';
+                          final avatarUrl = profile['avatar_url'];
+
+                          return ProfileListItem(
+                            title: profileName,
+                            subtitle: _activeProfileId == profileId ? 'Seleccionado' : 'Abrir perfil',
+                            isSelected: _activeProfileId == profileId,
+                            avatarUrl: avatarUrl?.toString(),
+                            onTap: () => _selectProfile(profileId),
                           );
-                        }
-
-                        final profile = _profiles[index];
-                        final profileId = profile['id_perfil'] as int;
-                        final profileName = profile['nombre_perfil']?.toString() ?? 'Perfil';
-                        final avatarUrl = profile['avatar_url'];
-
-                        return ProfileListItem(
-                          title: profileName,
-                          subtitle: _activeProfileId == profileId ? 'Seleccionado' : 'Abrir perfil',
-                          isSelected: _activeProfileId == profileId,
-                          avatarUrl: avatarUrl?.toString(),
-                          onTap: () => _selectProfile(profileId),
-                        );
-                      },
+                        },
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+      ),
     );
   }
 }

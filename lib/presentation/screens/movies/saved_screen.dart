@@ -7,6 +7,8 @@ import 'package:dreamers_movies_app_bv/presentation/widgets/home/home_bottom_nav
 import 'package:dreamers_movies_app_bv/domain/datasources/database_helper.dart';
 import 'package:dreamers_movies_app_bv/domain/repositories/user_repositories.dart';
 
+import 'package:dreamers_movies_app_bv/presentation/widgets/shared/app_refresh_indicator.dart';
+
 class SavedScreen extends StatefulWidget {
   static const name = 'saved-screen';
   const SavedScreen({super.key});
@@ -96,37 +98,47 @@ class _SavedScreenState extends State<SavedScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.amber))
-          : _savedMovies.isEmpty
-              ? const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.bookmark_border_rounded, color: Colors.white38, size: 80),
-                      SizedBox(height: 16),
-                      Text('Aún no tienes películas guardadas ', style: TextStyle(color: Colors.white54, fontSize: 16)),
-                      SizedBox(height: 8),
-                      Text('Guarda tus películas para verlas después', style: TextStyle(color: Colors.white38, fontSize: 14)),
+      body: AppRefreshIndicator(
+        onRefresh: _loadSavedFromDB,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: Colors.amber))
+            : _savedMovies.isEmpty
+                ? CustomScrollView(
+                    physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                    slivers: [
+                      SliverFillRemaining(
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Icon(Icons.bookmark_border_rounded, color: Colors.white38, size: 80),
+                              SizedBox(height: 16),
+                              Text('Aún no tienes películas guardadas', style: TextStyle(color: Colors.white54, fontSize: 16)),
+                              SizedBox(height: 8),
+                              Text('Guarda tus películas para verlas después', style: TextStyle(color: Colors.white38, fontSize: 14)),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
+                  )
+                : GridView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2, childAspectRatio: 0.6, crossAxisSpacing: 12, mainAxisSpacing: 16,
+                    ),
+                    itemCount: _savedMovies.length,
+                    itemBuilder: (context, index) {
+                      final movie = _savedMovies[index];
+                      return _SavedMovieCard(
+                        movie: movie,
+                        onTap: () => context.pushNamed('movie-details', extra: movie).then((_) => _loadSavedFromDB()),
+                        onRemove: () => _removeSavedMovie(movie),
+                      );
+                    },
                   ),
-                )
-              : GridView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  physics: const BouncingScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2, childAspectRatio: 0.6, crossAxisSpacing: 12, mainAxisSpacing: 16,
-                  ),
-                  itemCount: _savedMovies.length,
-                  itemBuilder: (context, index) {
-                    final movie = _savedMovies[index];
-                    return _SavedMovieCard(
-                      movie: movie,
-                      onTap: () => context.pushNamed('movie-details', extra: movie).then((_) => _loadSavedFromDB()),
-                      onRemove: () => _removeSavedMovie(movie),
-                    );
-                  },
-                ),
+      ),
       bottomNavigationBar: const HomeBottomNav(),
     );
   }

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -108,6 +109,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     if (!mounted) return;
 
     if (exito) {
+      PaintingBinding.instance.imageCache.clear();
+      PaintingBinding.instance.imageCache.clearLiveImages();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('✅ Foto de perfil actualizada')),
       );
@@ -255,7 +258,13 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     final aliasController = TextEditingController(text: _userAlias);
     final fullNameController = TextEditingController(text: _userName);
     final emailController = TextEditingController(text: _userEmail);
-    final phoneController = TextEditingController(text: _userPhone);
+    // Extraemos únicamente los 10 dígitos locales si el teléfono ya tenía +52 o prefijos
+    String initialPhoneDigits = _userPhone.replaceAll('+52', '').replaceAll(RegExp(r'\D'), '');
+    if (initialPhoneDigits.length > 10) {
+      initialPhoneDigits = initialPhoneDigits.substring(initialPhoneDigits.length - 10);
+    }
+    final phoneController = TextEditingController(text: initialPhoneDigits);
+    final editFormKey = GlobalKey<FormState>();
 
     showModalBottomSheet(
       context: context,
@@ -272,120 +281,176 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             right: 24,
             top: 24,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: Colors.white24,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Editar Datos Personales',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 25),
-              TextFormField(
-                controller: aliasController,
-                style: const TextStyle(color: Colors.white),
-                decoration: _inputDecoration(
-                  'Nombre de usuario',
-                  Icons.alternate_email,
-                ),
-              ),
-              const SizedBox(height: 15),
-              TextFormField(
-                controller: fullNameController,
-                style: const TextStyle(color: Colors.white),
-                decoration: _inputDecoration('Nombre completo', Icons.person),
-              ),
-              const SizedBox(height: 15),
-              TextFormField(
-                controller: emailController,
-                enabled: false,
-                style: const TextStyle(color: Colors.white70),
-                decoration: _inputDecoration('Correo electrónico', Icons.email),
-              ),
-              const SizedBox(height: 15),
-              TextFormField(
-                controller: phoneController,
-                style: const TextStyle(color: Colors.white),
-                keyboardType: TextInputType.phone,
-                decoration: _inputDecoration('Número de teléfono', Icons.phone),
-              ),
-              const SizedBox(height: 30),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueAccent,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
+          child: SingleChildScrollView(
+            child: Form(
+              key: editFormKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  onPressed: () async {
-                    if (widget.currentUser == null) return;
-
-                    final navigator = Navigator.of(context);
-                    final messenger = ScaffoldMessenger.of(context);
-
-                    final exito = await _userRepository.updateProfileInfo(
-                      userId: widget.currentUser!.id,
-                      nombres: fullNameController.text.trim(),
-                      apellidos: '',
-                      alias: aliasController.text.trim(),
-                      telefono: phoneController.text.trim(),
-                    );
-
-                    if (!mounted) return;
-
-                    if (exito) {
-                      final updatedUser = widget.currentUser!.copyWith(
-                        nombres: fullNameController.text.trim(),
-                        apellidos: '',
-                        telefono: phoneController.text.trim(),
-                        alias: aliasController.text.trim(),
-                      );
-
-                      setState(() {
-                        _userName = fullNameController.text.trim();
-                        _userAlias = aliasController.text.trim();
-                        _userPhone = phoneController.text.trim();
-                      });
-
-                      widget.onUserUpdated?.call(updatedUser);
-                      navigator.pop();
-                      messenger.showSnackBar(
-                        const SnackBar(
-                          content: Text('✅ Datos actualizados correctamente'),
-                        ),
-                      );
-                    } else {
-                      messenger.showSnackBar(
-                        const SnackBar(
-                          content: Text('❌ Error al actualizar los datos'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
-                  },
-                  child: const Text(
-                    'Guardar cambios',
-                    style: TextStyle(fontSize: 16, color: Colors.white),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Editar Datos Personales',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 25),
+                  TextFormField(
+                    controller: aliasController,
+                    style: const TextStyle(color: Colors.white),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                    ],
+                    decoration: _inputDecoration(
+                      'Nombre de usuario',
+                      Icons.alternate_email,
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'El nombre de usuario es requerido';
+                      }
+                      if (value.contains(' ')) {
+                        return 'El usuario no debe llevar espacios (ej. adrian_67)';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 15),
+                  TextFormField(
+                    controller: fullNameController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: _inputDecoration('Nombre completo', Icons.person),
+                    validator: (value) => value!.isEmpty ? 'Requerido' : null,
+                  ),
+                  const SizedBox(height: 15),
+                  TextFormField(
+                    controller: emailController,
+                    enabled: false,
+                    style: const TextStyle(color: Colors.white70),
+                    decoration: _inputDecoration('Correo electrónico', Icons.email),
+                  ),
+                  const SizedBox(height: 15),
+                  TextFormField(
+                    controller: phoneController,
+                    style: const TextStyle(color: Colors.white),
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(10),
+                    ],
+                    decoration: _inputDecoration('Número de teléfono', Icons.phone).copyWith(
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.only(left: 12, right: 8),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.phone, color: Colors.white54, size: 20),
+                            const SizedBox(width: 8),
+                            const Text('🇲🇽', style: TextStyle(fontSize: 18)),
+                            const SizedBox(width: 4),
+                            const Text(
+                              '+52',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(width: 1, height: 18, color: Colors.white24),
+                            const SizedBox(width: 4),
+                          ],
+                        ),
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) return 'Requerido';
+                      final clean = value.replaceAll(RegExp(r'\D'), '');
+                      if (clean.length != 10) {
+                        return 'Debe tener exactamente 10 dígitos';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 30),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueAccent,
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                      ),
+                      onPressed: () async {
+                        if (!editFormKey.currentState!.validate()) return;
+                        if (widget.currentUser == null) return;
+                        
+                        final navigator = Navigator.of(context);
+                        final messenger = ScaffoldMessenger.of(context);
+                        
+                        final phoneDigits = phoneController.text.trim();
+                        final phoneToSave = phoneDigits.isNotEmpty ? '+52 $phoneDigits' : '';
+
+                        final exito = await _userRepository.updateProfileInfo(
+                          userId: widget.currentUser!.id,
+                          nombres: fullNameController.text.trim(),
+                          apellidos: '',
+                          alias: aliasController.text.trim(),
+                          telefono: phoneToSave,
+                        );
+                        
+                        if (!mounted) return;
+                        
+                        if (exito) {
+                          final updatedUser = widget.currentUser!.copyWith(
+                            nombres: fullNameController.text.trim(),
+                            apellidos: '',
+                            telefono: phoneToSave,
+                            alias: aliasController.text.trim(),
+                          );
+                          setState(() {
+                            _userName = fullNameController.text.trim();
+                            _userAlias = aliasController.text.trim();
+                            _userPhone = phoneToSave;
+                          });
+                          widget.onUserUpdated?.call(updatedUser);
+                          navigator.pop();
+                          messenger.showSnackBar(
+                            const SnackBar(
+                              content: Text('✅ Datos actualizados correctamente'),
+                            ),
+                          );
+                        } else {
+                          messenger.showSnackBar(
+                            const SnackBar(
+                              content: Text('❌ Error al actualizar los datos'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                      child: const Text(
+                        'Guardar cambios',
+                        style: TextStyle(fontSize: 16, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                ],
               ),
-              const SizedBox(height: 30),
-            ],
+            ),
           ),
         );
       },
@@ -395,6 +460,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   void _showChangePasswordSheet(BuildContext context) {
     final currentController = TextEditingController();
     final newController = TextEditingController();
+    final passFormKey = GlobalKey<FormState>();
     bool obscureCurrent = true;
     bool obscureNew = true;
     String newPassword = '';
@@ -415,8 +481,14 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             final hasSpecial = newPassword.contains(
               RegExp(r'[!@#$%^&*(),.?":{}|<>]'),
             );
+            final isDifferentFromCurrent = newPassword != currentController.text.trim();
             final canSubmit =
-                hasMinLength && hasUppercase && hasNumber && hasSpecial;
+                currentController.text.trim().isNotEmpty &&
+                hasMinLength &&
+                hasUppercase &&
+                hasNumber &&
+                hasSpecial &&
+                isDifferentFromCurrent;
 
             return Padding(
               padding: EdgeInsets.only(
@@ -425,38 +497,42 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 right: 24,
                 top: 24,
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: Colors.white24,
-                        borderRadius: BorderRadius.circular(10),
+              child: SingleChildScrollView(
+                child: Form(
+                  key: passFormKey,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: Colors.white24,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  const Center(
-                    child: Text(
-                      'Cambiar Contraseña',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                      const SizedBox(height: 20),
+                      const Center(
+                        child: Text(
+                          'Cambiar Contraseña',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 25),
-                  TextFormField(
-                    controller: currentController,
-                    obscureText: obscureCurrent,
-                    style: const TextStyle(color: Colors.white),
-                    decoration:
-                        _inputDecoration(
+                      const SizedBox(height: 25),
+                      TextFormField(
+                        controller: currentController,
+                        obscureText: obscureCurrent,
+                        style: const TextStyle(color: Colors.white),
+                        onChanged: (_) => setModalState(() {}),
+                        decoration: _inputDecoration(
                           'Contraseña actual',
                           Icons.lock,
                         ).copyWith(
@@ -472,16 +548,24 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                             ),
                           ),
                         ),
-                  ),
-                  const SizedBox(height: 15),
-                  TextFormField(
-                    controller: newController,
-                    obscureText: obscureNew,
-                    style: const TextStyle(color: Colors.white),
-                    onChanged: (value) =>
-                        setModalState(() => newPassword = value),
-                    decoration:
-                        _inputDecoration(
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Debes ingresar tu contraseña actual';
+                          }
+                          if (value.trim().length < 6) {
+                            return 'La contraseña debe tener al menos 6 caracteres';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 15),
+                      TextFormField(
+                        controller: newController,
+                        obscureText: obscureNew,
+                        style: const TextStyle(color: Colors.white),
+                        onChanged: (value) =>
+                            setModalState(() => newPassword = value),
+                        decoration: _inputDecoration(
                           'Nueva contraseña',
                           Icons.lock_outline,
                         ).copyWith(
@@ -492,79 +576,106 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                   : Icons.visibility,
                               color: Colors.white54,
                             ),
-                            onPressed: () =>
-                                setModalState(() => obscureNew = !obscureNew),
+                            onPressed: () => setModalState(
+                                () => obscureNew = !obscureNew),
                           ),
                         ),
-                  ),
-                  const SizedBox(height: 15),
-                  _buildValidationRow('Mínimo 8 caracteres', hasMinLength),
-                  _buildValidationRow('Una letra mayúscula', hasUppercase),
-                  _buildValidationRow('Un número', hasNumber),
-                  _buildValidationRow(
-                    'Un carácter especial (!@#\$&*)',
-                    hasSpecial,
-                  ),
-                  const SizedBox(height: 25),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: canSubmit
-                            ? Colors.blueAccent
-                            : Colors.grey,
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Debes ingresar la nueva contraseña';
+                          }
+                          if (value.length < 8) {
+                            return 'La contraseña debe tener al menos 8 caracteres';
+                          }
+                          if (!value.contains(RegExp(r'[A-Z]'))) {
+                            return 'Debe contener al menos una letra mayúscula';
+                          }
+                          if (!value.contains(RegExp(r'[0-9]'))) {
+                            return 'Debe contener al menos un número';
+                          }
+                          if (!value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
+                            return 'Debe contener al menos un carácter especial (!@#\$&*)';
+                          }
+                          if (value == currentController.text.trim()) {
+                            return 'La nueva contraseña debe ser diferente a la actual';
+                          }
+                          return null;
+                        },
                       ),
-                      onPressed: canSubmit
-                          ? () async {
-                              if (widget.currentUser == null) return;
+                      const SizedBox(height: 15),
+                      _buildValidationRow('Mínimo 8 caracteres', hasMinLength),
+                      _buildValidationRow('Una letra mayúscula', hasUppercase),
+                      _buildValidationRow('Un número', hasNumber),
+                      _buildValidationRow(
+                        'Un carácter especial (!@#\$&*)',
+                        hasSpecial,
+                      ),
+                      const SizedBox(height: 25),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: canSubmit
+                                ? Colors.blueAccent
+                                : Colors.grey,
+                            padding: const EdgeInsets.symmetric(vertical: 15),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                          ),
+                          onPressed: canSubmit
+                              ? () async {
+                                  if (!passFormKey.currentState!.validate()) {
+                                    return;
+                                  }
+                                  if (widget.currentUser == null) return;
 
-                              final navigator = Navigator.of(context);
-                              final messenger = ScaffoldMessenger.of(context);
+                                  final navigator = Navigator.of(context);
+                                  final messenger =
+                                      ScaffoldMessenger.of(context);
 
-                              final actualizado = await _userRepository
-                                  .updateUserPassword(
+                                  final actualizado = await _userRepository
+                                      .updateUserPassword(
                                     userId: widget.currentUser!.id,
-                                    currentPassword: currentController.text
-                                        .trim(),
+                                    currentPassword:
+                                        currentController.text.trim(),
                                     newPassword: newController.text.trim(),
                                   );
 
-                              if (!mounted) return;
-                              navigator.pop();
+                                  if (!mounted) return;
+                                  navigator.pop();
 
-                              if (actualizado) {
-                                messenger.showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      '✅ Contraseña actualizada con éxito',
-                                    ),
-                                    backgroundColor: Colors.green,
-                                  ),
-                                );
-                              } else {
-                                messenger.showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      '❌ La contraseña actual es incorrecta',
-                                    ),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                              }
-                            }
-                          : null,
-                      child: const Text(
-                        'Actualizar contraseña',
-                        style: TextStyle(fontSize: 16, color: Colors.white),
+                                  if (actualizado) {
+                                    messenger.showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          '✅ Contraseña actualizada con éxito',
+                                        ),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    );
+                                  } else {
+                                    messenger.showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          '❌ La contraseña actual es incorrecta',
+                                        ),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                }
+                              : null,
+                          child: const Text(
+                            'Actualizar contraseña',
+                            style: TextStyle(fontSize: 16, color: Colors.white),
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 30),
+                    ],
                   ),
-                  const SizedBox(height: 30),
-                ],
+                ),
               ),
             );
           },
@@ -587,6 +698,15 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(15),
         borderSide: const BorderSide(color: Colors.blueAccent),
+      ),
+      errorStyle: const TextStyle(color: Colors.redAccent),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: const BorderSide(color: Colors.redAccent),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: const BorderSide(color: Colors.redAccent),
       ),
     );
   }
