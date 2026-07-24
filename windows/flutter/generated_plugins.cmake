@@ -3,9 +3,17 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  app_links
+  file_selector_windows
+  local_auth_windows
+  passkeys_windows
+  printing
+  rive_native
+  url_launcher_windows
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
+  jni
 )
 
 set(PLUGIN_BUNDLED_LIBRARIES)
