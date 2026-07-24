@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import 'package:dreamers_movies_app_bv/domain/entities/movie_entities.dart';
 import 'package:dreamers_movies_app_bv/resources/colors/colors.dart';
 
 class ActorDetailsScreen extends StatefulWidget {
@@ -46,11 +48,21 @@ class _ActorDetailsScreenState extends State<ActorDetailsScreen> {
       );
 
       final castList = (creditsResponse.data['cast'] as List<dynamic>? ?? []);
+
+      // Ordenamos por popularidad para mostrar las 10 mejores obras del actor
+      castList.sort((a, b) {
+        final popA = (a['popularity'] as num?)?.toDouble() ?? 0.0;
+        final popB = (b['popularity'] as num?)?.toDouble() ?? 0.0;
+        return popB.compareTo(popA);
+      });
+
       final filmography = castList
           .where((entry) => entry['title'] != null || entry['name'] != null)
           .map<Map<String, dynamic>>((entry) {
             final isMovie = entry['media_type'] == 'movie' || entry['title'] != null;
             return {
+              'raw': Map<String, dynamic>.from(entry as Map),
+              'id': entry['id'],
               'title': entry['title'] ?? entry['name'] ?? 'Sin título',
               'character': entry['character'] ?? '',
               'releaseDate': entry['release_date'] ?? entry['first_air_date'] ?? '',
@@ -58,6 +70,7 @@ class _ActorDetailsScreenState extends State<ActorDetailsScreen> {
               'mediaType': isMovie ? 'Película' : 'Serie',
             };
           })
+          .take(10)
           .toList();
 
       if (!mounted) return;
@@ -134,7 +147,7 @@ class _ActorDetailsScreenState extends State<ActorDetailsScreen> {
                                 : Image.network(
                                     _getProfilePath(),
                                     fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => const Center(
+                                    errorBuilder: (context, error, stackTrace) => const Center(
                                       child: Icon(Icons.person_outline, size: 56, color: Colors.white54),
                                     ),
                                   ),
@@ -226,61 +239,70 @@ class _ActorDetailsScreenState extends State<ActorDetailsScreen> {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: _filmography.length,
-                      separatorBuilder: (_, __) => const Divider(color: Colors.white12),
+                      separatorBuilder: (context, index) => const Divider(color: Colors.white12),
                       itemBuilder: (context, index) {
                         final item = _filmography[index];
                         final posterPath = item['posterPath']?.toString() ?? '';
+                        final rawData = item['raw'] as Map<String, dynamic>? ?? {};
 
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Row(
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: SizedBox(
-                                  width: 52,
-                                  height: 72,
-                                  child: posterPath.isEmpty
-                                      ? const Center(
-                                          child: Icon(Icons.movie_outlined, color: Colors.white54),
-                                        )
-                                      : Image.network(
-                                          'https://image.tmdb.org/t/p/w200$posterPath',
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) => const Center(
+                        return InkWell(
+                          onTap: () {
+                            final movie = Movie.fromJson(rawData);
+                            context.pushNamed('movie-details', extra: movie);
+                          },
+                          borderRadius: BorderRadius.circular(14),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                            child: Row(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: SizedBox(
+                                    width: 52,
+                                    height: 72,
+                                    child: posterPath.isEmpty
+                                        ? const Center(
                                             child: Icon(Icons.movie_outlined, color: Colors.white54),
+                                          )
+                                        : Image.network(
+                                            'https://image.tmdb.org/t/p/w200$posterPath',
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) => const Center(
+                                              child: Icon(Icons.movie_outlined, color: Colors.white54),
+                                            ),
                                           ),
-                                        ),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      item['title'].toString(),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item['title'].toString(),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      item['mediaType'].toString(),
-                                      style: const TextStyle(color: Colors.white54, fontSize: 12),
-                                    ),
-                                    if ((item['character']?.toString() ?? '').isNotEmpty) ...[
                                       const SizedBox(height: 4),
                                       Text(
-                                        'Como: ${item['character']}',
-                                        style: const TextStyle(color: Colors.white70, fontSize: 12),
+                                        item['mediaType'].toString(),
+                                        style: const TextStyle(color: Colors.white54, fontSize: 12),
                                       ),
+                                      if ((item['character']?.toString() ?? '').isNotEmpty) ...[
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Como: ${item['character']}',
+                                          style: const TextStyle(color: Colors.white70, fontSize: 12),
+                                        ),
+                                      ],
                                     ],
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                                const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white38, size: 16),
+                              ],
+                            ),
                           ),
                         );
                       },

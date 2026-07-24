@@ -284,6 +284,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
           child: SingleChildScrollView(
             child: Form(
               key: editFormKey,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -329,8 +330,28 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   TextFormField(
                     controller: fullNameController,
                     style: const TextStyle(color: Colors.white),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(
+                        RegExp(r"[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]"),
+                      ),
+                    ],
                     decoration: _inputDecoration('Nombre completo', Icons.person),
-                    validator: (value) => value!.isEmpty ? 'Requerido' : null,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'El nombre completo es requerido';
+                      }
+                      final trimmed = value.trim();
+                      if (trimmed.length < 3) {
+                        return 'El nombre debe tener al menos 3 caracteres';
+                      }
+                      if (RegExp(r'[0-9]').hasMatch(value)) {
+                        return 'El nombre no puede contener números';
+                      }
+                      if (!RegExp(r"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$").hasMatch(trimmed)) {
+                        return 'El nombre solo debe contener letras y espacios';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 15),
                   TextFormField(
